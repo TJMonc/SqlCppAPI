@@ -19,7 +19,7 @@ Structure:
         - RecordContainer class +
             - std::string tableName;
             - Database* db;
-            - std::vector<std::vector<std::unique_ptr<Record>> records
+            - std::vector<std::vector<Record> records
             - RecordContainer add(std::string condition)
             - RecordContainer filter(std::string condition)
             - bool update(std::string field, std::string value)
@@ -31,6 +31,7 @@ Structure:
             - RecordContainer get(std::vector<std::string> fields, std::vector<std::pair<std::string, std::string>> conditionals = {{"", ""}});
             - Model(std::string name)
         - Record : Model -
+        
             int insert(std::vector<std::string> values, std::vector<std::string> columns = {""}) = delete
             RecordContainer get(std::vector<std::string> fields, std::vector<std::pair<std::string, std::string>> conditionals = {{"", ""}}) = delete
             bool save()
