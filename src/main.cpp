@@ -5,16 +5,21 @@
 
 
 int main(int argc, char** argv){
-    sqlite3* db;
-    sqlite3_stmt* stmt;
 
-    if(sqlite3_open("test.db", &db) != SQLITE_OK){
-        throw std::runtime_error("LOL");
-    };
-    std::string sql = R"(SELECT * FROM )";
+    std::string sql = argv[1];
 
-    Database k("db");
-    k.query("D");
+    Database k("test.db");
+    auto dat = k.selectQuery(sql);
+
+    for(int i = 0; i < dat.size(); i++){
+        std::cout << i << ". ";
+        for(int j = 0; j < dat.at(i).size(); j++){
+            std::cout << dat.at(i).at(j) << "   ";
+        }
+        std::cout << "\n";
+    }
+
+
      
 
 

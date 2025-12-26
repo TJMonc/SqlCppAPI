@@ -95,22 +95,20 @@ class Database{
         Database(Database&) = delete;
         ~Database();
 
+
+        static int callback(void* args, int argc, char** argv, char** colName);
+
         /*
         @param query: any parametrized select query sql code. Parametrized must be marked with @identifier or ?.
-        @param paramValues: The values of the parameters
-        @param paramIDs: The parameter ids in the order they're shown in the query (if the ids are ?, use the default argument).
 
-        @return A vector of pairs where first = the name of the column, and second = the values of that column.
+        @return A vector of a vector of strings where the first row ([0][x]) are the column names and every thing else is the returned query data
         */
-        std::vector<std::pair<std::string, std::vector<std::string>>> selectQuery(std::string query, std::vector<std::string> paramValues, std::vector<std::string> paramIDs = {""});
+        std::vector<std::vector<std::string>> selectQuery(std::string query);
         
         /*
          *   @param query: any sql code. It's recomended to use selectQuery() for select queries though.
          *   @return The full sql string of code that will be executed upon calling execute()
         */
-        std::string query(std::string query);
-
-        //  @return True if the sql executed sucessfully. False if otherwise.
-        bool execute();
+        bool query(std::string query);
 
 };
