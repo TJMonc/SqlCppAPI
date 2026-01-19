@@ -5,7 +5,7 @@ Structure:
             - Table Name
             - db path
             - Database* db
-            - enum Type{TEXT, INT, DECIMAL, BOOL}
+            - enum Type{TEXT, INT, DECIMAL, BOOL, BLOB}
             - Type type
             - Type getType()
         - TEXT : Value +
@@ -16,6 +16,9 @@ Structure:
             - double val
         - BOOL : Value : public
             - bool val
+        - BLOB : Value : public
+            - int size
+            - char
         - RecordContainer class +
             - std::string tableName;
             - Database* db;
