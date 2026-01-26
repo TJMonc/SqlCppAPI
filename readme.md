@@ -5,14 +5,14 @@ Structure:
             - Table Name
             - db path
             - Database* db
-            - enum Type{TEXT, INT, DECIMAL, BOOL, BLOB}
+            - enum Type{TEXT, INT, FLOAT, BOOL, BLOB}
             - Type type
             - Type getType()
         - TEXT : Value +
             - std::string val
         - INT : Value : public
             - int val
-        - DECIMAL : Value +
+        - FLOAT : Value +
             - double val
         - BOOL : Value : public
             - bool val

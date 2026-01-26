@@ -19,10 +19,10 @@ Database::TextValue::TextValue(Value& other): Value(other.fieldName, Type::TEXT)
             this->value = std::to_string(integer->value);
             break;
         }
-        case DECIMAL:{
+        case FLOAT:{
 
-            DecimalValue* decimal = static_cast<DecimalValue*>(&other);
-            this->value = std::to_string(decimal->value);
+            FloatValue* floatVal = static_cast<FloatValue*>(&other);
+            this->value = std::to_string(floatVal->value);
             break;
         }
         case BOOL:{
@@ -69,9 +69,9 @@ Database::IntValue::IntValue(Value& other): Value(other.fieldName, Type::INT) {
             this->value = integer->value;
             break;
         }
-        case DECIMAL:{
-            DecimalValue* decimal = static_cast<DecimalValue*>(&other);
-            this->value = decimal->value;
+        case FLOAT:{
+            FloatValue* floatVal = static_cast<FloatValue*>(&other);
+            this->value = floatVal->value;
             break;
         }
         case BOOL:{
@@ -100,7 +100,7 @@ Database::IntValue::IntValue(std::string fieldName, bool aIsUnique) : Value(fiel
     value = 0;
 }
 
-Database::DecimalValue::DecimalValue(Value &other) : Value(other.fieldName, Type::DECIMAL)
+Database::FloatValue::FloatValue(Value &other) : Value(other.fieldName, Type::FLOAT)
 {
     switch(other.type){
         case TEXT:{
@@ -113,9 +113,9 @@ Database::DecimalValue::DecimalValue(Value &other) : Value(other.fieldName, Type
             this->value = integer->value;
         }
             break;
-        case DECIMAL:{
-            DecimalValue* decimal = static_cast<DecimalValue*>(&other);
-            this->value = decimal->value;
+        case FLOAT:{
+            FloatValue* floatVal = static_cast<FloatValue*>(&other);
+            this->value = floatVal->value;
             break;
         }
         case BOOL:{
@@ -125,7 +125,7 @@ Database::DecimalValue::DecimalValue(Value &other) : Value(other.fieldName, Type
             break;
         }
         case BLOB:{
-            throw std::runtime_error("ERROR: Attempted to convert BlobValue to DecimalValue");
+            throw std::runtime_error("ERROR: Attempted to convert BlobValue to FloatValue");
             break;
         }
         case NONE:{
@@ -141,7 +141,7 @@ Database::DecimalValue::DecimalValue(Value &other) : Value(other.fieldName, Type
 
     }
 }
-Database::DecimalValue::DecimalValue(std::string fieldName, bool aIsUnique) : Value(fieldName, DECIMAL, aIsUnique) {
+Database::FloatValue::FloatValue(std::string fieldName, bool aIsUnique) : Value(fieldName, FLOAT, aIsUnique) {
     value = 0.0;
 }
 Database::BoolValue::BoolValue(Value &other) : Value(other.fieldName, Type::BOOL)
@@ -158,9 +158,9 @@ Database::BoolValue::BoolValue(Value &other) : Value(other.fieldName, Type::BOOL
             this->value = integer->value;
             break;
         }
-        case DECIMAL:{
-            DecimalValue* decimal = static_cast<DecimalValue*>(&other);
-            this->value = decimal->value;
+        case FLOAT:{
+            FloatValue* floatVal = static_cast<FloatValue*>(&other);
+            this->value = floatVal->value;
             break;
         }
         case BOOL:{
@@ -209,8 +209,8 @@ Database::BlobValue::BlobValue(Value &other) : Value(other.fieldName, Type::BLOB
             throw std::runtime_error("ERROR: Attempted to convert IntValue to BoolValue");
             break;
         }
-        case DECIMAL:{
-            throw std::runtime_error("ERROR: Attempted to convert DecimalValue to BoolValue");
+        case FLOAT:{
+            throw std::runtime_error("ERROR: Attempted to convert FloatValue to BoolValue");
             break;
         }
         case BOOL:{
@@ -237,6 +237,9 @@ Database::BlobValue::BlobValue(Value &other) : Value(other.fieldName, Type::BLOB
     }
 }
 
+//NoneValues don't necessarily equal Nullvalues. They can be table names, column names. Anything that's not necessarily an SQLite type.
 Database::NoneValue::NoneValue(std::string aVal): Value(aVal, Type::NONE){
     this->value = aVal;
 }
+
+

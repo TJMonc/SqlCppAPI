@@ -14,7 +14,38 @@ Database::~Database(){
 
 
 }
+std::variant<Database::TextValue*, Database::IntValue*, Database::FloatValue*, Database::BlobValue*, Database::NoneValue*> Database::convert(Value &val) {
+    switch(val.type){
+        case TEXT:{
+            return static_cast<TextValue*>(&val);
+            break;
+        }
+        case INT:{
+            return static_cast<IntValue*>(&val);
+            break;
+        }
+        case FLOAT:{
+            return static_cast<FloatValue*>(&val);
+            break;
+        }
+        case BLOB:{
+            return static_cast<BlobValue*>(&val);
+            break;
 
+        }
+        case NULLVAL:{
+            return static_cast<NoneValue*>(&val);
+            break;
+        }
+
+        case NONE:
+            return static_cast<NoneValue*>(&val);
+            break;
+        default:
+            throw std::runtime_error("ERROR: Could not disern type.");
+
+    }
+}
 int Database::callback(void *args, int argc, char **argv, char **colName)
 {
     auto* queryDat = (std::vector<std::vector<std::optional<std::string>>>*)args;
@@ -50,7 +81,6 @@ std::vector<std::vector<std::optional<std::string>>> Database::selectQuery(std::
     int rc = sqlite3_exec(db, query.c_str(), callback, (void*)&data, &errorMsg);
 
     if(rc != SQLITE_OK){
-        sqlite3_free(errorMsg);
 
         
         throw std::runtime_error(errorMsg);
@@ -125,9 +155,9 @@ std::vector<std::vector<std::unique_ptr<Database::Value>>> Database::preparedSel
                     row.emplace_back(std::move(integer));
                     break;
                 }
-                case DECIMAL:{
+                case FLOAT:{
                     Value val(result.at(0).at(i)->fieldName, NULLVAL);
-                    auto real = std::make_unique<DecimalValue>(val);
+                    auto real = std::make_unique<FloatValue>(val);
 
                     real->value = sqlite3_column_double(stmt, i);
 
@@ -141,6 +171,10 @@ std::vector<std::vector<std::unique_ptr<Database::Value>>> Database::preparedSel
                     
                     row.emplace_back(std::make_unique<BlobValue>(result.at(0).at(i)->fieldName, blob, size));
                 
+                    break;
+                }
+                case NULLVAL:{
+                    row.emplace_back(std::make_unique<NoneValue>("N/A"));
                     break;
                 }
                 default:{
@@ -158,19 +192,18 @@ std::vector<std::vector<std::unique_ptr<Database::Value>>> Database::preparedSel
     return result;
 }
 
-bool Database::query(std::string query){
+int Database::query(std::string query){
     int rc = sqlite3_exec(db, query.c_str(), NULL, NULL, &errorMsg);
 
     if(rc != SQLITE_OK){
-         sqlite3_free(errorMsg);
 
         throw std::runtime_error(errorMsg);
     }
 
-    return true;
+    return 0;
 }
 
-bool Database::preparedQuery(std::string paramQuery, std::vector<std::string> vals){
+int Database::preparedQuery(std::string paramQuery, std::vector<std::string> vals){
     sqlite3_stmt* stmt = nullptr;
 
     int rc = sqlite3_prepare_v2(db, paramQuery.c_str(), -1, &stmt, NULL);
@@ -178,7 +211,7 @@ bool Database::preparedQuery(std::string paramQuery, std::vector<std::string> va
     if(rc != SQLITE_OK){
         sqlite3_finalize(stmt);
 
-        throw std::runtime_error("Prepared Statement failed");
+        return rc;
     }
 
     for(int i = 0; i < vals.size(); i++){
@@ -190,12 +223,68 @@ bool Database::preparedQuery(std::string paramQuery, std::vector<std::string> va
     if(rc != SQLITE_DONE){
         sqlite3_finalize(stmt);
 
-        throw std::runtime_error(sqlite3_errmsg(db));
+        return rc;
     }
 
     sqlite3_finalize(stmt);
 
-    return true;
+    return 0;
 }
+
+std::vector<std::vector<std::optional<std::string>>> Database::getTableInfo(std::string tableName) {
+    return this->selectQuery("PRAGMA table_info(" + tableName + ")");
+}
+
+bool Database::doesColumnExist(std::string tableName, std::string columnName) {
+    auto tableInfo = getTableInfo(tableName);
+
+    bool found = false;
+    for(int i = 0; i < tableInfo.size(); i++){
+        if(tableInfo.at(i).at(1) == columnName){
+            found = true;
+            break;
+        }
+    }
+
+    return found;
+}
+
+int Database::preparedQuery(std::string paramQuery, std::vector<Value*> vals){
+    sqlite3_stmt* stmt = nullptr;
+
+    int rc = sqlite3_prepare_v2(db, paramQuery.c_str(), -1, &stmt, NULL);
+
+    if(rc != SQLITE_OK){
+        sqlite3_finalize(stmt);
+
+        return rc;
+    }
+
+    for(int i = 0; i < vals.size(); i++){
+        auto ptr = convert(*vals.at(i));
+        if(vals.at(i)->type != BLOB){
+            sqlite3_bind_text(stmt, i + 1, (const char*)vals.at(i)->toString().c_str(), -1, SQLITE_TRANSIENT);
+        }
+        else{
+            auto blob = std::get<BlobValue*>(ptr);
+            sqlite3_bind_blob(stmt, i + 1, blob->data.data(), blob->data.size(), SQLITE_TRANSIENT);
+        }
+    }
+
+    while((rc = sqlite3_step(stmt)) == SQLITE_ROW);
+
+    if(rc != SQLITE_DONE){
+        sqlite3_finalize(stmt);
+
+        return rc;
+    }
+
+    sqlite3_finalize(stmt);
+
+    return 0;
+}
+
+
+
 
 
