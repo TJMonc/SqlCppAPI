@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 project(sqlite3cpp)
 
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(SQLiteAPI_DIR "C:/Users/terra/Downloads/Projects/Libraries/MinGW/SqlCAPI")
+set(SQLiteAPI_DIR "../SqlCAPI")
 set(INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/include)
 set(LIBRARY_DIRECTORIES ${SQLiteAPI_DIR}/lib)
 file(GLOB SOURCES src/*.cpp)

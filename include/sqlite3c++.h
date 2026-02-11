@@ -24,17 +24,33 @@ class Database{
 
         public:
             //Column name
-            const std::string fieldName = "";
+            std::string fieldName = "";
             //
-            const bool isUnique = false;
+            bool isUnique = false;
 
             //an integer representing the value type. {INT = SQLITE_INTEGER, TEXT = SQLITE_TEXT, FLOAT = SQLITE_FLOAT, etc}
-            const Type type = NONE;
+            Type type = NONE;
 
             Value(std::string aFieldName, Type aType = NONE, bool aIsUnique = false);
-            Value& operator=(const Value&) = delete;
 
             Value() = default;
+
+            Value& operator=(Value& other){
+                return clone(other);
+            }
+
+            virtual Value& clone(Value& other) {
+
+                if(this->type == other.type){
+                    this->fieldName = other.fieldName;
+                    this->isUnique = other.isUnique;
+                    this->type = other.type;
+                }
+                else{
+                    throw std::runtime_error("Type mismatch");
+                }
+                return *this;
+            }
 
             virtual ~Value() = default;
         public:
@@ -53,9 +69,9 @@ class Database{
                 return os;
             };
 
-            friend std::ostream& operator<<(std::ostream& os, std::unique_ptr<Value>& val){
+            friend std::ostream& operator<<(std::ostream& os, Value& val){
     
-                return val->write(os);
+                return val.write(os);
             }
 
         };
@@ -68,6 +84,25 @@ class Database{
             TextValue(std::string fieldName, bool aIsUnique = false);
             TextValue() = default;
 
+            Value& clone(Value& other) {
+
+                if(this->type == other.type){
+                    TextValue& otherVal = static_cast<TextValue&>(other);
+                    this->fieldName = other.fieldName;
+                    this->isUnique = other.isUnique;
+                    this->type = other.type;
+                    this->value = otherVal.type;
+                }
+                else{
+                    throw std::runtime_error("Type mismatch");
+                }
+                return *this;
+            }
+
+            Value& operator=(const std::string& other){
+                this->value = other;
+                return *this;
+            }
 
             std::string toString(){
                 return value;
@@ -87,7 +122,26 @@ class Database{
             IntValue(Value& other);
             IntValue(std::string fieldName, bool aIsUnique = false);
             IntValue() = default;
+
+            Value& operator=(const int& other){
+                this->value = other;
+                return *this;
+            }
             
+            Value& clone(Value& other) {
+
+                if(this->type == other.type){
+                    IntValue& otherVal = static_cast<IntValue&>(other);
+                    this->fieldName = other.fieldName;
+                    this->isUnique = other.isUnique;
+                    this->type = other.type;
+                    this->value = otherVal.type;
+                }
+                else{
+                    throw std::runtime_error("Type mismatch");
+                }
+                return *this;
+            } 
 
             std::string toString(){
                 return std::to_string(value);
@@ -106,6 +160,25 @@ class Database{
             FloatValue(Value& other);
             FloatValue(std::string fieldName, bool aIsUnique = false);
 
+            Value& operator=(const double& other){
+                this->value = other;
+                return *this;
+            }
+
+            Value& clone(Value& other) {
+
+                if(this->type == other.type){
+                    FloatValue& otherVal = static_cast<FloatValue&>(other);
+                    this->fieldName = other.fieldName;
+                    this->isUnique = other.isUnique;
+                    this->type = other.type;
+                    this->value = otherVal.type;
+                }
+                else{
+                    throw std::runtime_error("Type mismatch");
+                }
+                return *this;
+            } 
             double& getValue(){return value; }
 
             std::string toString(){
@@ -123,12 +196,30 @@ class Database{
             BoolValue(Value& other);
             BoolValue() = default;
 
+            Value& operator=(const bool& other){
+                this->value = other;
+                return *this;
+            }
 
+            Value& clone(Value& other) {
+
+                if(this->type == other.type){
+                    BoolValue& otherVal = static_cast<BoolValue&>(other);
+                    this->fieldName = other.fieldName;
+                    this->isUnique = other.isUnique;
+                    this->type = other.type;
+                    this->value = otherVal.type;
+                }
+                else{
+                    throw std::runtime_error("Type mismatch");
+                }
+                return *this;
+            } 
             std::string toString(){
                 return std::to_string(value);
             }
 
-            bool getValue(){
+            bool& getValue(){
                 return value;
             }
 
@@ -144,6 +235,26 @@ class Database{
             BlobValue(std::string aFieldName, const void* data, size_t size);
             BlobValue(Value& other);
             BlobValue() = default;
+
+            Value& clone(Value& other) {
+
+                if(this->type == other.type){
+                    BlobValue& otherVal = static_cast<BlobValue&>(other);
+                    this->fieldName = other.fieldName;
+                    this->isUnique = other.isUnique;
+                    this->type = other.type;
+                    this->data = otherVal.data;
+                }
+                else{
+                    throw std::runtime_error("Type mismatch");
+                }
+                return *this;
+            }
+
+            Value& operator=(const std::vector<std::byte>& other){
+                this->data = other;
+                return *this;
+            }
 
             std::vector<std::byte>& getValue(){
                 return data;
@@ -167,27 +278,39 @@ class Database{
                 return value;
             }
 
+            Value& operator=(const std::string& other){
+                this->value = other;
+                return *this;
+            }
+
             std::string& getValue(){
                 return value;
             }
         };
-    private:
+    public:
         class Record;
+        class Model;
 
         class RecordContainer{
             private:
                 std::vector<std::unique_ptr<Record>> records;
+                std::vector<int> ids;
                 std::string baseSqlCode;
+                std::vector<std::string> values;
+                Model& model;
             public:
+                RecordContainer(Model& aModel, std::string baseSql, std::vector<std::string> values);
                 //Chains a query with AND
-                RecordContainer& filter(std::string condition);
+                RecordContainer filter(std::string var, char op = '=', std::string condition = "0");
                 //chains a query with OR
-                RecordContainer& add(std::string condition);
+                RecordContainer add(std::string condition);
 
                 //Sorts the record container in ascending order
-                RecordContainer& sortAsc();
+                RecordContainer sortAsc();
                 //sorts the record container in descending order
-                RecordContainer& sortDesc();
+                RecordContainer sortDesc();
+
+                size_t size(){ return records.size(); }
 
                 Record& at(const int index);
                 Record& operator[](const int index);
@@ -206,9 +329,11 @@ class Database{
         public:
             std::vector<std::unique_ptr<Value>> fields;
 
+        
+
             int insert(std::vector<std::string> values, std::vector<std::string> columns = {});
-            RecordContainer get(std::vector<std::string> fields, std::vector<std::pair<std::string, std::string>> conditionals = {{"", ""}});
-            Model(std::string name);
+            RecordContainer get();
+            Model(Database* aDb, std::string name);
 
             //The makeValue functions are meant to be used in the constructor any derived classes for models in order to create unique tables without rewriting the whole class
 
@@ -218,14 +343,23 @@ class Database{
             BlobValue& makeBlob(Database& db, std::string tableName, std::string fieldName);
 
         };
-        private:
 
         class Record {
             Model& table;
+            std::map<std::string, std::unique_ptr<Value>> fields;
+            IntValue id = IntValue("", 0);
         public:
+            friend class RecordContainer;
             bool save();
-            Model* operator->(){return &table;};
-            Record(Model& table);
+            inline Record(Model& aTable) : table(aTable) {
+                id = table.id;
+                fields.insert({id.fieldName, std::make_unique<IntValue>(id)});
+                for(size_t i = 0; i < table.fields.size(); i++) {
+                    fields.insert({table.fields.at(i)->fieldName, std::make_unique<Value>(*table.fields.at(i))});
+                }
+            };
+            inline Value& operator[](const std::string& fieldName){return *fields.at(fieldName); };
+            inline const Value& operator[](const std::string& fieldName) const {return *fields.at(fieldName); };
 
         };
 
@@ -279,5 +413,96 @@ class Database{
 
         static std::variant<TextValue*, IntValue*, FloatValue*, BlobValue*, NoneValue*> convert(Value& val);
 
+        static Value& convertVal(Value& val){
+            switch(val.type){
+                case TEXT:{
+
+                    return (TextValue&)val;
+                    
+                    break;
+                }
+                case INT:{
+                    return (IntValue&)val;
+
+                    break;
+                }
+                case FLOAT:{
+
+                    return (FloatValue&)val;
+
+                    break;
+                }
+                case BOOL:{
+
+                    return (BoolValue&)val;
+
+                    
+                    break;
+                }
+                case BLOB:{
+
+                    return (BlobValue&)val;
+                    break;
+                }
+                case NONE:{
+
+                    return (NoneValue&)val;
+                    break;
+                }
+                case NULLVAL:{
+                    return (NoneValue&)val;
+                    break;
+                }
+                default:
+                    throw std::runtime_error("ERROR: Could not disern type.");
+
+        }
+    }
+
+    static std::unique_ptr<Value> valToPtr(Value& val){
+        std::unique_ptr<Value> ptr = nullptr;
+        switch(val.type){
+            case TEXT:{
+                ptr = std::make_unique<TextValue>(val);
+                break;
+            }
+            case INT:{
+                ptr = std::make_unique<IntValue>(val);
+
+                break;
+            }
+            case FLOAT:{
+
+                ptr = std::make_unique<FloatValue>(val);
+
+                break;
+            }
+            case BOOL:{
+
+                ptr = std::make_unique<BoolValue>(val);
+
+                
+                break;
+            }
+            case BLOB:{
+
+                ptr = std::make_unique<BlobValue>(val);
+                break;
+            }
+            case NONE:{
+
+                ptr = std::make_unique<NoneValue>(val.fieldName);
+                break;
+            }
+            case NULLVAL:{
+                ptr = std::make_unique<NoneValue>("");
+                break;
+            }
+            default:
+                throw std::runtime_error("ERROR: Could not disern type.");
+
+        }
+        return ptr;
+    }
 };
 

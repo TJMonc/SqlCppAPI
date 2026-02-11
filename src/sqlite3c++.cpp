@@ -83,7 +83,7 @@ std::vector<std::vector<std::optional<std::string>>> Database::selectQuery(std::
     if(rc != SQLITE_OK){
 
         
-        throw std::runtime_error(errorMsg);
+        throw std::runtime_error("error in selectQuery()");
     }
 
     return data;
@@ -187,6 +187,8 @@ std::vector<std::vector<std::unique_ptr<Database::Value>>> Database::preparedSel
         result.emplace_back(std::move(row));
         row = std::vector<std::unique_ptr<Value>>();
     }
+
+
     sqlite3_finalize(stmt);
 
     return result;
@@ -232,7 +234,7 @@ int Database::preparedQuery(std::string paramQuery, std::vector<std::string> val
 }
 
 std::vector<std::vector<std::optional<std::string>>> Database::getTableInfo(std::string tableName) {
-    return this->selectQuery("PRAGMA table_info(" + tableName + ")");
+    return this->selectQuery("PRAGMA table_info( '" + tableName + "' )");
 }
 
 bool Database::doesColumnExist(std::string tableName, std::string columnName) {
@@ -283,8 +285,5 @@ int Database::preparedQuery(std::string paramQuery, std::vector<Value*> vals){
 
     return 0;
 }
-
-
-
 
 

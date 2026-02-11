@@ -7,7 +7,7 @@ int Database::Model::insert(std::vector<std::string> values, std::vector<std::st
         throw std::runtime_error("Values size must not excede the amount of columns in the table");
     }
     if(columns.size() != 0){
-        if(values.size() != columns.size()){
+        if(values.size() != columns.size() && values.size() != (tableInfo.size() - 1)){
             throw std::runtime_error("columns vector's size must be equal to values vector's size");
         }
         query += " (";
@@ -19,7 +19,7 @@ int Database::Model::insert(std::vector<std::string> values, std::vector<std::st
         }
         query += " )";
     }
-    else if(values.size() != tableInfo.size() && values.size() != tableInfo.size()){
+    else if(values.size() != tableInfo.size() && values.size() != tableInfo.size() - 1){
         throw std::runtime_error("Values size must equal the amount of columns in the table if a second argument isn't passed");
     }
 
@@ -31,17 +31,23 @@ int Database::Model::insert(std::vector<std::string> values, std::vector<std::st
             query += ", ";
         }
     }
-    query += " );";
+    query += " )";
 
 
 
     return db->preparedQuery(query, values);
 }
 
-Database::Model::Model(std::string name) : id(name + "id", true)
+Database::RecordContainer Database::Model::get() {
+    std::string baseSql = "SELECT * FROM " + name;
+
+    return RecordContainer(*this, baseSql, {});
+}
+
+Database::Model::Model(Database* aDb, std::string name) : db(aDb), id(name + "id", true), name(name)
 {
     
-    db->query(std::format("CREATE TABLE IF NOT EXISTS {} ( {} INTEGER PRIMARY KEY AUTOINCREMENT )", name, name + "id"));
+    db->query(std::format("CREATE TABLE IF NOT EXISTS '{}' ( {} INTEGER PRIMARY KEY AUTOINCREMENT )", name, name + "id"));
 }
 
 Database::IntValue& Database::Model::makeInt(Database& db, std::string tableName, std::string fieldName, bool isUnique, bool isNull, int defaultVal) {
@@ -49,7 +55,8 @@ Database::IntValue& Database::Model::makeInt(Database& db, std::string tableName
 
 
     if(!db.doesColumnExist(tableName, fieldName)){
-        std::string query = std::format("ALTER TABLE {} ADD COLUMN {} INTEGER", tableName, fieldName);
+        std::string query = std::format("ALTER TABLE '{}' ADD COLUMN {} INTEGER", tableName, fieldName);
+        std::cout << "\n" + query + "\n";
 
         if(isUnique){
             query += " UNIQUE";
@@ -57,7 +64,7 @@ Database::IntValue& Database::Model::makeInt(Database& db, std::string tableName
         if(!isNull){
             query += " NOT NULL";
         }
-        query += " DEFAULT '" + std::to_string(defaultVal) + "'";
+        query += " DEFAULT " + std::to_string(defaultVal);
         query += ";";
 
         db.query(query);
@@ -72,7 +79,8 @@ Database::TextValue& Database::Model::makeText(Database& db, std::string tableNa
     TextValue text(fieldName, isUnique);
 
     if(!db.doesColumnExist(tableName, fieldName)){
-        std::string query = std::format("ALTER TABLE {} ADD COLUMN {} TEXT", tableName, fieldName);
+        std::string query = std::format("ALTER TABLE '{}' ADD COLUMN {} TEXT", tableName, fieldName);
+        std::cout << "\n" + query + "\n";
 
         if(isUnique){
             query += " UNIQUE";
@@ -86,6 +94,10 @@ Database::TextValue& Database::Model::makeText(Database& db, std::string tableNa
         db.query(query);
 
     }
+    else{
+        std::cout << "Column exists";
+    }
+    
     this->fields.push_back(std::make_unique<TextValue>(text));
     TextValue* ptr = dynamic_cast<TextValue*>(fields.back().get());
 
@@ -96,7 +108,7 @@ Database::FloatValue& Database::Model::makeFloat(Database& db, std::string table
     FloatValue floatVal(fieldName, isUnique);
 
     if(!db.doesColumnExist(tableName, fieldName)){
-        std::string query = std::format("ALTER TABLE {} ADD COLUMN {} REAL", tableName, fieldName);
+        std::string query = std::format("ALTER TABLE '{}' ADD COLUMN {} REAL", tableName, fieldName);
 
         if(isUnique){
             query += " UNIQUE";
@@ -121,7 +133,7 @@ Database::BlobValue& Database::Model::makeBlob(Database& db, std::string tableNa
     BlobValue blob(fieldName, nullptr, 0);
 
     if(!db.doesColumnExist(tableName, fieldName)){
-        std::string query = std::format("ALTER TABLE {} ADD COLUMN {} BLOB", tableName, fieldName);
+        std::string query = std::format("ALTER TABLE '{}' ADD COLUMN {} BLOB", tableName, fieldName);
 
         query += ";";
 
@@ -139,24 +151,14 @@ bool Database::Record::save() {
 
     std::vector<Value*> values;
 
-    for(size_t i = 0; i < table.fields.size(); i++){
-        auto& field = table.fields.at(i);
-        auto variant = convert(*field);
-
-        std::visit([&](auto& val){
-            query += " " + val->fieldName + " = " + " ?";
-            if(i < table.fields.size() - 1){
-                query += ",";
-            }
-            values.push_back(val);
-        }, variant);
-
-
-
+    for(auto& vals : fields){
+        query += std::format(" {} = ?,", vals.first);
+        values.push_back(vals.second.get());
     }
-    values.push_back(&table.id);
+    values.push_back(&id);
+    query.pop_back();
 
-    query += " WHERE " + table.name + "id = " + "?"; 
+    query += " WHERE " + id.fieldName + " = ?"; 
     if(table.db->preparedQuery(query, values) == SQLITE_OK){
         return true;
     }
