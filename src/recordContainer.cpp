@@ -35,6 +35,20 @@ Database::RecordContainer Database::RecordContainer::filter(std::string var, cha
     return RecordContainer(model, queryCode, newValues);
 }
 
-Database::Record &Database::RecordContainer::at(const int index){
-    return *records.at(index);    
+void Database::RecordContainer::removeAll() {
+    for (size_t i = 0; i < records.size(); i++) {
+        this->at(i).remove();
+    }
+    baseSqlCode = "";
+
+    records.clear();
+}
+
+Database::Record &Database::RecordContainer::at(const int index)
+{
+    return *records.at(index);
+}
+
+Database::Record &Database::RecordContainer::operator[](const int index) {
+    return this->at(index);
 }

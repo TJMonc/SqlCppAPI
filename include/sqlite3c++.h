@@ -311,6 +311,7 @@ class Database{
                 RecordContainer sortDesc();
 
                 size_t size(){ return records.size(); }
+                void removeAll();
 
                 Record& at(const int index);
                 Record& operator[](const int index);
@@ -332,6 +333,10 @@ class Database{
         
 
             int insert(std::vector<std::string> values, std::vector<std::string> columns = {});
+            int remove(IntValue& aId);
+            int remove(int aID);
+            int remove(std::string condition);
+
             RecordContainer get();
             Model(Database* aDb, std::string name);
 
@@ -351,6 +356,7 @@ class Database{
         public:
             friend class RecordContainer;
             bool save();
+            int remove();
             inline Record(Model& aTable) : table(aTable) {
                 id = table.id;
                 fields.insert({id.fieldName, std::make_unique<IntValue>(id)});

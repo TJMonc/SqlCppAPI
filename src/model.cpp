@@ -38,6 +38,28 @@ int Database::Model::insert(std::vector<std::string> values, std::vector<std::st
     return db->preparedQuery(query, values);
 }
 
+int Database::Model::remove(IntValue& aId)
+{
+    std::string query = std::format("DELETE FROM '{}' WHERE {} = ?", name, id.fieldName);
+    std::vector<Value*> vals = {&aId};
+
+    return db->preparedQuery(query, vals);
+}
+
+int Database::Model::remove(int aID)
+{
+    std::string query = std::format("DELETE FROM '{}' WHERE {} = ?", name, id.fieldName);
+    std::vector<std::string> vals = {std::to_string(aID)};
+
+    return db->preparedQuery(query, vals);}
+
+int Database::Model::remove(std::string condition)
+{
+    std::string query = std::format("DELETE FROM '{}' WHERE {}", name, condition);
+
+    return db->query(query);
+}
+
 Database::RecordContainer Database::Model::get() {
     std::string baseSql = "SELECT * FROM " + name;
 
@@ -167,3 +189,7 @@ bool Database::Record::save() {
     }
 }
 
+int Database::Record::remove() {
+    std::string query = std::format("REMOVE FROM {} WHERE {} = ?", table.name, id.fieldName);
+    return table.db->preparedQuery(query, {&id});
+}
