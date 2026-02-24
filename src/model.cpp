@@ -3,23 +3,27 @@
 int Database::Model::insert(std::vector<std::string> values, std::vector<std::string> columns) {
     std::string query = "INSERT INTO " + this->name;
     auto tableInfo = db->getTableInfo(name);
+
     if(values.size() > tableInfo.size()){
         throw std::runtime_error("Values size must not excede the amount of columns in the table");
     }
+
     if(columns.size() != 0){
         if(values.size() != columns.size() && values.size() != (tableInfo.size() - 1)){
             throw std::runtime_error("columns vector's size must be equal to values vector's size");
         }
+
         query += " (";
         for(size_t i = 0; i < columns.size(); i++){
             query += (" " + columns.at(i));
+
             if(i != columns.size() - 1){
                 query += ", ";
             }
         }
         query += " )";
     }
-    else if(values.size() != tableInfo.size() && values.size() != tableInfo.size() - 1){
+    else if(values.size() != (tableInfo.size() - 1) && values.size() != (tableInfo.size() - 2)){
         throw std::runtime_error("Values size must equal the amount of columns in the table if a second argument isn't passed");
     }
 

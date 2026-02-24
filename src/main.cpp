@@ -20,19 +20,14 @@ int main(int argc, char** argv){
     
 
 
-   // k.preparedQuery("INSERT INTO test VALUES ( ?, ? )", {&text, &integer});
-
-
-    auto dat = testTable.get();
-        for(size_t i = 0; i < dat.size(); i++){
-        auto& val = dat.at(i);
-        Database::TextValue& name = (Database::TextValue&)val["Name"];
-        Database::IntValue& age = (Database::IntValue&)val["Age"];
-        name = "New";
-        age = 100;
-        
-        val.save();
+    for(size_t i = 0; i < names.size(); i++){
+        testTable.insert({names.at(i), std::to_string(ages.at(i))}, {"Name", "Age"});
     }
+
+    std::cout << "\nInsert done\n";
+    auto dat = testTable.get();
+    std::cout << "\nGet done\n";
+
     for(size_t i = 0; i < dat.size(); i++){
         auto& val = dat.at(i);
         std::cout << val["newTestid"] << "    ";
