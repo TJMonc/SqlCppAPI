@@ -179,6 +179,7 @@ bool Database::Record::save() {
 
     for(auto& vals : fields){
         query += std::format(" {} = ?,", vals.first);
+        std::cout << vals.second->fieldName <<" :  "<< vals.second->toString() << "\n";
         values.push_back(vals.second.get());
     }
     values.push_back(&id);
@@ -194,6 +195,6 @@ bool Database::Record::save() {
 }
 
 int Database::Record::remove() {
-    std::string query = std::format("REMOVE FROM {} WHERE {} = ?", table.name, id.fieldName);
+    std::string query = std::format("DELETE FROM '{}' WHERE {} = ?", table.name, id.fieldName);
     return table.db->preparedQuery(query, {&id});
 }

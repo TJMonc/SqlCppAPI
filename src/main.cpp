@@ -30,9 +30,8 @@ int main(int argc, char** argv){
 
     for(size_t i = 0; i < dat.size(); i++){
         auto& val = dat.at(i);
-        std::cout << val["newTestid"] << "    ";
-        std::cout << val["Name"] << "     ";
-        std::cout << val["Age"] << "     \n ";
+
+        val.remove();
 
     }
 

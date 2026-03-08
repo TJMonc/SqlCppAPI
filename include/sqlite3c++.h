@@ -91,7 +91,7 @@ class Database{
                     this->fieldName = other.fieldName;
                     this->isUnique = other.isUnique;
                     this->type = other.type;
-                    this->value = otherVal.type;
+                    this->value = otherVal.value;
                 }
                 else{
                     throw std::runtime_error("Type mismatch");
