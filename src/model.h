@@ -2,6 +2,7 @@
 #include "sqlite3c++.h"
 
 class Test : public Database::Model {
+    public:
     Database::TextValue f_name = Database::TextValue("", false);
     Database::IntValue f_age = Database::IntValue("", false);
 public:

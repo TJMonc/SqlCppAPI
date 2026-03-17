@@ -84,6 +84,14 @@ class Database{
             TextValue(std::string fieldName, bool aIsUnique = false);
             TextValue() = default;
 
+            operator std::string() const{
+                return value;
+
+            }
+
+
+
+
             Value& clone(Value& other) {
 
                 if(this->type == other.type){
@@ -127,6 +135,10 @@ class Database{
                 this->value = other;
                 return *this;
             }
+
+            operator int() const{
+                return value;
+            }
             
             Value& clone(Value& other) {
 
@@ -159,6 +171,10 @@ class Database{
             double value;
             FloatValue(Value& other);
             FloatValue(std::string fieldName, bool aIsUnique = false);
+
+            operator double() const{
+                return value;
+            }
 
             Value& operator=(const double& other){
                 this->value = other;
@@ -195,6 +211,10 @@ class Database{
             bool value;
             BoolValue(Value& other);
             BoolValue() = default;
+
+            operator bool() const{
+                return value;
+            }
 
             Value& operator=(const bool& other){
                 this->value = other;
@@ -235,6 +255,10 @@ class Database{
             BlobValue(std::string aFieldName, const void* data, size_t size);
             BlobValue(Value& other);
             BlobValue() = default;
+
+            operator std::vector<std::byte>() const{
+                return data;
+            }
 
             Value& clone(Value& other) {
 
@@ -364,8 +388,25 @@ class Database{
                     fields.insert({table.fields.at(i)->fieldName, std::make_unique<Value>(*table.fields.at(i))});
                 }
             };
-            inline Value& operator[](const std::string& fieldName){return *fields.at(fieldName); };
-            inline const Value& operator[](const std::string& fieldName) const {return *fields.at(fieldName); };
+
+
+            template <typename T> T& operator[](const T& val){
+                auto ptr = dynamic_cast<T*>(fields.at(val.fieldName).get());
+
+                if(!ptr){
+                    throw std::runtime_error("Type not recognized");
+                }
+                return *ptr;
+            }
+
+            template <typename T> const T& operator[](const T& val) const {
+                auto ptr = dynamic_cast<const T*>(fields.at(val.fieldName).get());
+
+                if(!ptr){
+                    throw std::runtime_error("Type not recognized");
+                }
+                return (const T&)*ptr;
+            }
 
         };
 

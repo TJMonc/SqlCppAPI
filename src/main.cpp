@@ -30,10 +30,12 @@ int main(int argc, char** argv){
 
     for(size_t i = 0; i < dat.size(); i++){
         auto& val = dat.at(i);
-
-        val.remove();
+        val[testTable.f_name].value = "Terrance";
+        val[testTable.f_age].value = 32;
+        val.save();
 
     }
+
 
      
     return 0;

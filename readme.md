@@ -1,40 +1,12 @@
-Structure:
-    - Database Class +
-        -  Value Class -
-            - Name
-            - Table Name
-            - db path
-            - Database* db
-            - enum Type{TEXT, INT, FLOAT, BOOL, BLOB}
-            - Type type
-            - Type getType()
-        - TEXT : Value +
-            - std::string val
-        - INT : Value : public
-            - int val
-        - FLOAT : Value +
-            - double val
-        - BOOL : Value : public
-            - bool val
-        - BLOB : Value : public
-            - int size
-            - char
-        - RecordContainer class +
-            - std::string tableName;
-            - Database* db;
-            - std::vector<std::vector<Record> records
-            - RecordContainer add(std::string condition)
-            - RecordContainer filter(std::string condition)
-            - bool update(std::string field, std::string value)
-        - Model Class +
-            - Name
-            - Database* db
-            - db
-            - int insert(std::vector<std::string> values, std::vector<std::string> columns = {""});
-            - RecordContainer get(std::vector<std::string> fields, std::vector<std::pair<std::string, std::string>> conditionals = {{"", ""}});
-            - Model(std::string name)
-        - Record : Model -
-        
-            int insert(std::vector<std::string> values, std::vector<std::string> columns = {""}) = delete
-            RecordContainer get(std::vector<std::string> fields, std::vector<std::pair<std::string, std::string>> conditionals = {{"", ""}}) = delete
-            bool save()
+Notes:
+
+Structural Changes
+    - Add a QueryCondition struct that simply stores a private sql string and a vector of values for prepared queries (Could add more)
+
+Add/change the following operator overloads:
+    - Record
+        - T& Record::operator()(T& field) : Meant to be used as way to access record[fieldname] without manually casting to prefered type. Could also be T& operator[](T& field).
+
+        - QueryCondition {x}Value::operator[ComparisonOperators]([any primitive type] other) : Allows for better filtering
+        - add more Value assignment operators to be able to store the value directly
+        - all primitive types need overloads for implicit casting
