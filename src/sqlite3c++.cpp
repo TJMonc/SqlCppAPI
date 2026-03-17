@@ -141,7 +141,7 @@ std::vector<std::vector<std::unique_ptr<Database::Value>>> Database::preparedSel
 
                     }
                     else{
-                        row.emplace_back(std::make_unique<Value>(val));
+                        row.emplace_back(std::make_unique<NoneValue>(val.fieldName));
                     }
 
                     break;

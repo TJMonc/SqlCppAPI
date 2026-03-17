@@ -20,6 +20,17 @@ class Database{
         std::string sqlCode;
     public:
 
+        struct QueryCondition{
+                std::string condition;
+                std::vector<std::string> values;
+
+                QueryCondition(std::string aCondition, std::vector<std::string> aVals) : condition(aCondition), values(aVals) {};
+                QueryCondition() = delete;
+                
+            
+
+        };
+
     class Value {
 
         public:
@@ -55,7 +66,7 @@ class Database{
             virtual ~Value() = default;
         public:
 
-            virtual std::string toString(){
+            virtual std::string toString() const{
                 return fieldName;
             }
 
@@ -75,6 +86,7 @@ class Database{
             }
 
         };
+
 
     public:
         class TextValue : public Value{
@@ -112,7 +124,7 @@ class Database{
                 return *this;
             }
 
-            std::string toString(){
+            std::string toString() const{
                 return value;
             }
 
@@ -139,6 +151,8 @@ class Database{
             operator int() const{
                 return value;
             }
+
+
             
             Value& clone(Value& other) {
 
@@ -147,7 +161,7 @@ class Database{
                     this->fieldName = other.fieldName;
                     this->isUnique = other.isUnique;
                     this->type = other.type;
-                    this->value = otherVal.type;
+                    this->value = otherVal.value;
                 }
                 else{
                     throw std::runtime_error("Type mismatch");
@@ -155,7 +169,7 @@ class Database{
                 return *this;
             } 
 
-            std::string toString(){
+            std::string toString() const{
                 return std::to_string(value);
             }
 
@@ -188,7 +202,7 @@ class Database{
                     this->fieldName = other.fieldName;
                     this->isUnique = other.isUnique;
                     this->type = other.type;
-                    this->value = otherVal.type;
+                    this->value = otherVal.value;
                 }
                 else{
                     throw std::runtime_error("Type mismatch");
@@ -197,7 +211,7 @@ class Database{
             } 
             double& getValue(){return value; }
 
-            std::string toString(){
+            std::string toString() const{
                 return std::to_string(value);
             }
 
@@ -228,7 +242,7 @@ class Database{
                     this->fieldName = other.fieldName;
                     this->isUnique = other.isUnique;
                     this->type = other.type;
-                    this->value = otherVal.type;
+                    this->value = otherVal.value;
                 }
                 else{
                     throw std::runtime_error("Type mismatch");
@@ -283,12 +297,12 @@ class Database{
             std::vector<std::byte>& getValue(){
                 return data;
             }
-            std::string toString(){
-                return "N/A";
+            std::string toString() const{
+                return "Cannot turn blob value into string";
             }
 
             std::ostream& write(std::ostream& os){
-                os << data.data();
+                os.write((char*)data.data(), data.size());
                 return os;
             }
         };
@@ -298,7 +312,7 @@ class Database{
             public:
             std::string value;
             NoneValue(std::string aVal);
-            std::string toString(){
+            std::string toString() const{
                 return value;
             }
 
@@ -385,7 +399,7 @@ class Database{
                 id = table.id;
                 fields.insert({id.fieldName, std::make_unique<IntValue>(id)});
                 for(size_t i = 0; i < table.fields.size(); i++) {
-                    fields.insert({table.fields.at(i)->fieldName, std::make_unique<Value>(*table.fields.at(i))});
+                    fields.insert({table.fields.at(i)->fieldName, valToPtr(*table.fields.at(i))});
                 }
             };
 
@@ -419,7 +433,6 @@ class Database{
         ~Database();
 
 
-
         //Callback function for simple select queries
         static int callback(void* args, int argc, char** argv, char** colName);
 
@@ -427,7 +440,6 @@ class Database{
 
         /*
         @brief Use for simple select queries. It's not recomended to use this for any binary data handling(images, videos, any files, etc)
-
         @return A vector of a vector of strings where the first row ([0][x]) are the column names and every thing else is the returned query data
         */
         std::vector<std::vector<std::optional<std::string>>> selectQuery(std::string query);

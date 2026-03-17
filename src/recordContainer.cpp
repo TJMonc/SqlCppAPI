@@ -3,6 +3,7 @@
 
 Database::RecordContainer::RecordContainer(Model& aModel, std::string baseSql, std::vector<std::string> vals) : model(aModel), values(vals){
     auto dat = model.db->preparedSelectQuery(baseSql, values);
+    this->baseSqlCode = baseSql;
     for(size_t i = 1; i < dat.size(); i++){
         Record singleRecord(model);
 
@@ -11,7 +12,7 @@ Database::RecordContainer::RecordContainer(Model& aModel, std::string baseSql, s
             if(singleVal->fieldName == singleRecord.id.fieldName && singleVal->type == INT){
                 singleRecord.id = *static_cast<IntValue*>(singleVal.get());
             }
-            if(singleRecord.fields.contains(singleVal->fieldName)){
+            else if(singleRecord.fields.contains(singleVal->fieldName)){
                 singleRecord.fields.at(singleVal->fieldName) = std::move(valToPtr(*singleVal));
             }
             else{
@@ -26,9 +27,12 @@ Database::RecordContainer::RecordContainer(Model& aModel, std::string baseSql, s
     
 }
 
-Database::RecordContainer Database::RecordContainer::filter(std::string var, char op, std::string condition)
-{
-    std::string queryCode = baseSqlCode + " AND " + var + op + "?";
+Database::RecordContainer Database::RecordContainer::filter(std::string var, char op, std::string condition) {
+    std::string queryCode = baseSqlCode;
+    queryCode += (baseSqlCode.find("WHERE") == std::string::npos) ? " WHERE " : " AND ";
+
+    queryCode += var + op + " ?";
+
     std::vector<std::string> newValues = values;
     newValues.push_back(condition);
 
@@ -36,9 +40,19 @@ Database::RecordContainer Database::RecordContainer::filter(std::string var, cha
 }
 
 void Database::RecordContainer::removeAll() {
-    for (size_t i = 0; i < records.size(); i++) {
-        this->at(i).remove();
+    if(records.empty()){
+        return;
     }
+    std::string query = std::format("DELETE FROM '{}' WHERE {} IN (", this->at(0).table.name, this->at(0).id.fieldName);
+    std::vector<std::string> ids;
+    for (size_t i = 0; i < records.size(); i++) {
+        ids.push_back(this->at(i).id.toString());
+        query += " ?,";
+    }
+    query.pop_back();
+    query += ")";
+
+    this->at(0).table.db->preparedQuery(query, ids);
     baseSqlCode = "";
 
     records.clear();
