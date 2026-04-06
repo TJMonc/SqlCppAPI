@@ -27,17 +27,33 @@ Database::RecordContainer::RecordContainer(Model& aModel, std::string baseSql, s
     
 }
 
-Database::RecordContainer Database::RecordContainer::filter(std::string var, char op, std::string condition) {
+Database::RecordContainer Database::RecordContainer::filter(std::string var, std::string op, std::string condition) {
     std::string queryCode = baseSqlCode;
     queryCode += (baseSqlCode.find("WHERE") == std::string::npos) ? " WHERE " : " AND ";
 
-    queryCode += var + op + " ?";
+    queryCode += var + " " + op + " ?";
 
     std::vector<std::string> newValues = values;
     newValues.push_back(condition);
 
     return RecordContainer(model, queryCode, newValues);
 }
+
+Database::RecordContainer Database::RecordContainer::filter(const QueryCondition &condition) {
+    std::string queryCode = baseSqlCode;
+
+    std::unique_ptr<QueryCondition> mutableCondition = condition.resolve();
+    queryCode += (baseSqlCode.find("WHERE") == std::string::npos) ? " WHERE " + mutableCondition->interpret() : " " + mutableCondition->interpret();
+
+    std::vector<std::string> newValues = values;
+
+    newValues.insert(newValues.end(), mutableCondition->values.begin(), mutableCondition->values.end());
+
+    return RecordContainer(this->model, queryCode, newValues);
+
+
+}
+
 
 void Database::RecordContainer::removeAll() {
     if(records.empty()){

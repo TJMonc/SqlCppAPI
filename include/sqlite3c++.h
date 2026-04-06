@@ -9,27 +9,110 @@
 #include "sqlite3.h"
 
 
+
 class Database{
     public:
         enum Type {NONE, INT = SQLITE_INTEGER, FLOAT = SQLITE_FLOAT, TEXT = SQLITE_TEXT, BLOB = SQLITE_BLOB, NULLVAL=SQLITE_NULL, BOOL};
-
     private:
         sqlite3* db = nullptr;
         char* errorMsg = nullptr;
         const std::string path;
         std::string sqlCode;
     public:
-
         struct QueryCondition{
-                std::string condition;
-                std::vector<std::string> values;
-
-                QueryCondition(std::string aCondition, std::vector<std::string> aVals) : condition(aCondition), values(aVals) {};
-                QueryCondition() = delete;
-                
             
+            public:
+            enum conditionType {COMPARISON, AND, OR};
+            std::string condition;
+            conditionType type;
+            std::vector<std::string> values;
+
+            virtual std::unique_ptr<QueryCondition> resolve() const = 0;
+            virtual std::string interpret() = 0;
+        };
+
+        //Comparison condition {==, !=, <, >, <=, >=}. Lowest precedence
+        struct CQueryCondition : public QueryCondition{
+                std::string left;
+                std::string right;
+
+                CQueryCondition(std::string aLeft, std::string aRight, std::string aCondition, bool isRight = false) :
+                 left(aLeft), right(aRight){
+                    this->condition = aCondition;
+                    type = COMPARISON;
+
+                    values = {right};
+                 };
+
+
+           std::unique_ptr<QueryCondition> resolve() const{
+                auto result = std::make_unique<CQueryCondition>(left, right, condition);
+
+                return result;
+            }
+            std::string interpret(){
+                return left + " " + condition + " ?";
+            }
+                
 
         };
+        
+        //Can act as the filter() method
+        struct ANDQueryCondition : QueryCondition{
+            std::unique_ptr<QueryCondition> left;
+            std::unique_ptr<QueryCondition> right;
+
+            ANDQueryCondition(QueryCondition& aLeft, QueryCondition& aRight){
+                this->condition = "AND";
+                type = AND;
+
+                left = aLeft.resolve();
+                right = aRight.resolve();
+                this->values.insert(values.end(), left->values.begin(), left->values.end());
+                this->values.insert(values.end(), right->values.begin(), right->values.end());
+
+            }
+
+            
+           std::unique_ptr<QueryCondition> resolve() const {
+                auto result = std::make_unique<ANDQueryCondition>(*this->left, *this->right);
+
+                return result;
+            }
+
+            std::string interpret(){
+                return left->interpret() + " AND " + right->interpret();
+            }
+        };
+
+        //can act as the add() method
+        struct ORQueryCondition : QueryCondition{
+            std::unique_ptr<QueryCondition> left;
+            std::unique_ptr<QueryCondition> right;
+
+            ORQueryCondition(QueryCondition& a_left, QueryCondition& a_right){
+                this->condition = "OR";
+                type = OR;
+
+                left = a_left.resolve();
+                right = a_right.resolve();
+
+                this->values.insert(values.end(), left->values.begin(), left->values.end());
+                this->values.insert(values.end(), right->values.begin(), right->values.end());
+            }
+
+
+            std::unique_ptr<QueryCondition> resolve() const {
+                auto result = std::make_unique<ORQueryCondition>(*this->left, *this->right);
+
+                return result;
+            }
+
+            std::string interpret(){
+                return left->interpret() + " OR " + right->interpret();
+            }
+        };
+
 
     class Value {
 
@@ -339,7 +422,8 @@ class Database{
             public:
                 RecordContainer(Model& aModel, std::string baseSql, std::vector<std::string> values);
                 //Chains a query with AND
-                RecordContainer filter(std::string var, char op = '=', std::string condition = "0");
+                RecordContainer filter(std::string var, std::string op = "=", std::string condition = "0");
+                RecordContainer filter(const QueryCondition& condition);
                 //chains a query with OR
                 RecordContainer add(std::string condition);
 
@@ -562,6 +646,29 @@ class Database{
 
         }
         return ptr;
-    }
+    };
+
+    friend CQueryCondition operator<(const IntValue& v, int other);
+    friend CQueryCondition operator>(const IntValue& v, int other);
+    friend CQueryCondition operator<=(const IntValue& v, int other);
+    friend CQueryCondition operator>=(const IntValue& v, int other);
+    friend CQueryCondition operator==(const IntValue& v, int other);
+    friend CQueryCondition operator!=(const IntValue& v, int other);
+
+    friend ANDQueryCondition operator&&(QueryCondition& v, QueryCondition& other);
+
+    friend ORQueryCondition operator||(QueryCondition& v, QueryCondition& other);
+
+
+
+    friend CQueryCondition operator<(const FloatValue& v, double other);
+    friend CQueryCondition operator>(const FloatValue& v, double other);
+    friend CQueryCondition operator<=(const FloatValue& v, double other);
+    friend CQueryCondition operator>=(const FloatValue& v, double other);
+    friend CQueryCondition operator==(const FloatValue& v, double other);
+    friend CQueryCondition operator!=(const FloatValue& v, double other);
+
+    friend CQueryCondition operator==(const TextValue& v, std::string other);
+    friend CQueryCondition operator!=(const TextValue& v, std::string other);
 };
 
