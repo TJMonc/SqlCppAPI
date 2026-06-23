@@ -41,8 +41,15 @@ namespace DB{
             IDatabase(const IDatabase& other) = delete;
             IDatabase(IDatabase&& other) = delete;
 
-            virtual int execute(const std::string& query, const std::vector<std::string>& params);
-            virtual QuerySet select(const std::string& query, const std::vector<std::string>& params);
+            virtual int execute(const std::string& a_query, const std::vector<std::string>& params);
+            virtual QuerySet select(const std::string& a_query, const std::vector<std::string>& params);
+
+    };
+
+    template <typename T>
+    struct ValueConverter{
+        static T fromIValue(const Value& a_val);
+        static Value toIValue(const T& a_val);
     };
 
 }
