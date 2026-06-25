@@ -28,12 +28,21 @@ else()
 endif()
 
 file(GLOB SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp)
-add_executable(sqlite3cpp ${SOURCES})
+add_library(${PROJECT_NAME} ${SOURCES})
 
 target_link_directories(${PROJECT_NAME} PRIVATE ${LINK_DIRECTORIES})
 target_link_libraries(${PROJECT_NAME} ${LINKED_LIBS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRECTORIES})
 target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILE_OPTIONS})
+
+
+file(GLOB SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp ${CMAKE_SOURCE_DIR}/test_src/*.cpp)
+add_executable(${PROJECT_NAME}_test ${SOURCES})
+
+target_link_directories(${PROJECT_NAME}_test PRIVATE ${LINK_DIRECTORIES})
+target_link_libraries(${PROJECT_NAME}_test ${LINKED_LIBS})
+target_include_directories(${PROJECT_NAME}_test PRIVATE ${INCLUDE_DIRECTORIES})
+target_compile_options(${PROJECT_NAME}_test PRIVATE ${COMPILE_OPTIONS})
 
 add_dependencies(sqlite3)
 
