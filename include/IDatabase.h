@@ -15,7 +15,7 @@ namespace DB{
 
         Value& operator[](const std::string& field){
             if(!values.contains(field)){
-                throw DatabaseException("Row data indexed out of range. Row field does not exist.");
+                throw DatabaseException("DB::Row::operator[]",  "OUT OF BOUNDS ERROR", "Row data indexed out of range. Row field does not exist.");
             }
             return values.at(field);
         }
@@ -27,7 +27,7 @@ namespace DB{
 
         Row& operator[](const size_t index){
             if(data.size() <= index){
-                throw DatabaseException("Query Set data indexed out of range.");
+                throw DatabaseException("DB::QuerySet::operator[]", "OUT OF BOUNDS ERROR", "Query Set data indexed out of range.");
             }
             return data.at(index);
         }
@@ -41,8 +41,8 @@ namespace DB{
             IDatabase(const IDatabase& other) = delete;
             IDatabase(IDatabase&& other) = delete;
 
-            virtual int execute(const std::string& a_query, const std::vector<std::string>& params);
-            virtual QuerySet select(const std::string& a_query, const std::vector<std::string>& params);
+            virtual int execute(const std::string& a_query, const std::vector<Value>& params) = 0;
+            virtual QuerySet select(const std::string& a_query, const std::vector<Value>& params) = 0;
 
     };
 

@@ -4,7 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/deps/sqlite-amalgamation-src/include"
+                "${workspaceFolder}/build/deps/sqlite-amalgamation-src/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

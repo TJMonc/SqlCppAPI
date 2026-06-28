@@ -7,7 +7,7 @@ namespace DB{
     
     class SQLiteDatabase : public IDatabase{
         private:
-            sqlite3* db;
+            sqlite3* db = nullptr;
         public:
             ~SQLiteDatabase();
             SQLiteDatabase() = delete;
@@ -15,8 +15,8 @@ namespace DB{
             SQLiteDatabase(const SQLiteDatabase& other);
             SQLiteDatabase(SQLiteDatabase&& other);
 
-            virtual int execute(const std::string& query, const std::vector<std::string>& params);
-            virtual QuerySet select(const std::string& query, const std::vector<std::string>& params);
+            virtual int execute(const std::string& query, const std::vector<Value>& params);
+            virtual QuerySet select(const std::string& query, const std::vector<Value>& params);
 
     };
 
