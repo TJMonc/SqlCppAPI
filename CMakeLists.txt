@@ -32,7 +32,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRECTORIES})
 target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILE_OPTIONS})
 
 
-file(GLOB SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp ${CMAKE_SOURCE_DIR}/test_src/*.cpp)
+file(GLOB SOURCES ${CMAKE_SOURCE_DIR}/test_src/*.cpp)
 add_executable(${PROJECT_NAME}_test ${SOURCES})
 
 target_link_directories(${PROJECT_NAME}_test PRIVATE ${LINK_DIRECTORIES})
@@ -41,4 +41,4 @@ target_include_directories(${PROJECT_NAME}_test PRIVATE ${INCLUDE_DIRECTORIES})
 target_compile_options(${PROJECT_NAME}_test PRIVATE ${COMPILE_OPTIONS})
 
 add_dependencies(${PROJECT_NAME} sqlite3)
-add_dependencies(${PROJECT_NAME}_test sqlite3)
+add_dependencies(${PROJECT_NAME}_test ${PROJECT_NAME})

@@ -4,16 +4,24 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+#include <optional>
 
 
 
 namespace DB{
-    using Value = std::variant<int64_t, std::string, double, std::vector<char>, std::monostate>;
+    using DB_Int = int64_t;
+    using DB_String = std::string;
+    using DB_Float = double;
+    using DB_Binary = std::vector<char>;
+    using DB_NULL = std::monostate;
+    using DBValue = std::variant<DB_Int, DB_String, DB_Float, DB_Binary, DB_NULL>;
+
+    enum Type {DB_INT_TYPE, DB_STRING_TYPE, DB_FLOAT_TYPE, DB_BINARY_TYPE, DB_NULL_TYPE};
 
     struct Row{
-        std::unordered_map<std::string, Value> values;
+        std::unordered_map<std::string, DBValue> values;
 
-        Value& operator[](const std::string& field){
+        DBValue& operator[](const std::string& field){
             if(!values.contains(field)){
                 throw DatabaseException("DB::Row::operator[]",  "OUT OF BOUNDS ERROR", "Row data indexed out of range. Row field does not exist.");
             }
@@ -41,15 +49,20 @@ namespace DB{
             IDatabase(const IDatabase& other) = delete;
             IDatabase(IDatabase&& other) = delete;
 
-            virtual int execute(const std::string& a_query, const std::vector<Value>& params) = 0;
-            virtual QuerySet select(const std::string& a_query, const std::vector<Value>& params) = 0;
+            virtual int execute(const std::string& a_query, const std::vector<DBValue>& params) = 0;
+            virtual QuerySet select(const std::string& a_query, const std::vector<DBValue>& params) = 0;
 
     };
 
-    template <typename T>
-    struct ValueConverter{
-        static T fromIValue(const Value& a_val);
-        static Value toIValue(const T& a_val);
+   
+    struct DBValueConverter{
+        template <typename T>
+        static T fromDBValue(const DBValue& a_val);
+        template <typename T>
+        static DBValue toDBValue(const T& a_val){return DBValue();};
+
+        static const Type checkType(const DBValue& a_val);
+        static bool isNull(const DBValue& a_val) { return std::holds_alternative<DB_NULL>(a_val); }
     };
 
 }
