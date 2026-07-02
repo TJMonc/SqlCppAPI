@@ -27,10 +27,14 @@ namespace DB{
             }
             return values.at(field);
         }
+
     };
 
     struct QuerySet{
         std::vector<std::string> colNames;
+        std::vector<Type> colTypes;
+        std::unordered_map<std::string, Type> typeMap;
+
         std::vector<Row> data;
 
         Row& operator[](const size_t index){
@@ -39,6 +43,15 @@ namespace DB{
             }
             return data.at(index);
         }
+        Type getType(std::string colName){
+            if(typeMap.contains(colName)){
+                return typeMap.at(colName);
+            }
+            else{
+                throw DatabaseException("DB::QuerySet::getType", "OUT OF BOUNDS ERROR", "Query Set data indexed out of range. Column Name doesn't exist.");
+            }
+        }
+
 
     };
 
@@ -57,11 +70,89 @@ namespace DB{
    
     struct DBValueConverter{
         template <typename T>
-        static T fromDBValue(const DBValue& a_val);
-        template <typename T>
-        static DBValue toDBValue(const T& a_val){return DBValue();};
+        static T fromDBValue(const DBValue& a_val){
+            const Type valType = DBValueConverter::checkType(a_val);
+            if constexpr (std::is_same_v<T, DB_Int> || std::is_same_v<T, DB_Float>){
+                if(valType == DB_INT_TYPE){
+                    return std::get<DB_Int>(a_val);
+                }
+                else if(valType == DB_FLOAT_TYPE){
+                    return std::get<DB_Float>(a_val);
+                }
+                else if(valType == DB_STRING_TYPE){
+                    try{
+                        return std::stod(std::get<DB_String>(a_val));
+                    }
+                    catch(std::exception& e){
+                        throw DatabaseException("DB::DBValueConverter::fromDBValue<DB_Int/DB_Float>", "TYPE CONVERSION ERROR", "String not convertible. Type mismatch at runtime");
 
-        static const Type checkType(const DBValue& a_val);
+                    }
+                }
+                else{
+                    throw DatabaseException("DB::DBValueConverter::fromDBValue<DB_Int/DB_Float>", "TYPE CONVERSION ERROR", "Value Type mismatch at runtime");
+                }
+            }
+            else if constexpr (std::is_same_v<T, DB_String>){
+                if(valType == DB_STRING_TYPE){
+                    return std::get<DB_String>(a_val);
+                }
+                else if(valType != DB_BINARY_TYPE && valType != DB_NULL_TYPE){
+                    if(valType == DB_INT_TYPE){
+                        return std::to_string(std::get<DB_Int>(a_val));
+                    }
+                    if(valType == DB_FLOAT_TYPE){
+                        return std::to_string(std::get<DB_Float>(a_val));
+                    }
+                }
+                else{
+                    throw DatabaseException("DB::DBValueConverter::fromDBValue<DB_String>", "TYPE CONVERSION ERROR", "Type Mismatch at runtime");
+
+                }
+            }
+            else if constexpr (std::is_same_v<T, DB_Binary>){
+                if(valType == DB_BINARY_TYPE){
+                    return std::get<DB_Binary>(a_val);
+                }
+                throw DatabaseException("DB::DBValueConverter::fromDBValue<DB_Binary>", "TYPE CONVERSION ERROR", "Binary type not convertible");
+
+            }
+            else if constexpr (std::is_same_v<T, DB_NULL>){
+                return std::monostate();
+            }
+            else{
+                throw DatabaseException("DB::DBValueConverter::fromDBValue<T>", "TYPE CONVERSION ERROR", "Type not recognized");
+
+            }
+        }
+        template <typename T>
+        static DBValue toDBValue(const T& a_val){
+            try{
+                return DBValue(a_val);
+            }
+            catch(std::exception& e){
+                throw DatabaseException("DB::DBValueConverter<T>::toDBValue", "TYPE ERROR", "Invalid type");
+            }
+        };
+
+        static const Type checkType(const DBValue& a_val) {
+            if (std::holds_alternative<DB_NULL>(a_val)){
+                return Type::DB_NULL_TYPE;
+            }
+            if (std::holds_alternative<DB_Int>(a_val)){
+                return Type::DB_INT_TYPE;
+            }
+            if (std::holds_alternative<DB_Float>(a_val)){
+                return Type::DB_FLOAT_TYPE;
+            }
+            if (std::holds_alternative<DB_String>(a_val)){
+                return Type::DB_STRING_TYPE;
+            }
+            if (std::holds_alternative<DB_Binary>(a_val)){
+                return Type::DB_BINARY_TYPE;
+            }
+
+            throw DatabaseException("DB::DBValueConverter::checkType", "TYPE ERROR", "Value Type not recognized");
+        }
         static bool isNull(const DBValue& a_val) { return std::holds_alternative<DB_NULL>(a_val); }
     };
 
