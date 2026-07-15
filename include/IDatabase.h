@@ -27,6 +27,16 @@ namespace DB{
             }
             return values.at(field);
         }
+        void insert(const std::pair<std::string, DBValue>& a_val){
+            if(values.contains(a_val.first)){
+                throw DatabaseException(
+                    "DB::Row::insert",
+                     "COLUMN NAME COLLISION ERROR",
+                      "Result set cannot have duplicate column names. Column names potentially not properlly aliased\nConflicting Column Name: " + a_val.first);
+            }
+
+            values.insert(a_val);
+        }
 
     };
 

@@ -4,6 +4,8 @@ using namespace DB;
 int main(int argc, char** argv){
     DBValue value = DB_String("123");
     int result = DBValueConverter::fromDBValue<DB_Int>(value);
+    QuerySet fl;
 
-    std::cout << result;
+    fl[0]["blah"];
+
 }
