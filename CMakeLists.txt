@@ -32,6 +32,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRECTORIES})
 target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILE_OPTIONS})
 
 
+set(LINKED_LIBS sqlite3 sqlite3cpp)
 file(GLOB SOURCES ${CMAKE_SOURCE_DIR}/test_src/*.cpp)
 add_executable(${PROJECT_NAME}_test ${SOURCES})
 

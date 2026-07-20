@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
-#include <optional>
+#include <any>
 
 
 
@@ -34,7 +34,6 @@ namespace DB{
                      "COLUMN NAME COLLISION ERROR",
                       "Result set cannot have duplicate column names. Column names potentially not properlly aliased\nConflicting Column Name: " + a_val.first);
             }
-
             values.insert(a_val);
         }
 
@@ -129,10 +128,9 @@ namespace DB{
             else if constexpr (std::is_same_v<T, DB_NULL>){
                 return std::monostate();
             }
-            else{
-                throw DatabaseException("DB::DBValueConverter::fromDBValue<T>", "TYPE CONVERSION ERROR", "Type not recognized");
 
-            }
+            throw DatabaseException("DB::DBValueConverter::fromDBValue<T>", "TYPE CONVERSION ERROR", "Type not recognized");
+
         }
         template <typename T>
         static DBValue toDBValue(const T& a_val){
@@ -143,7 +141,6 @@ namespace DB{
                 throw DatabaseException("DB::DBValueConverter<T>::toDBValue", "TYPE ERROR", "Invalid type");
             }
         };
-
         static const Type checkType(const DBValue& a_val) {
             if (std::holds_alternative<DB_NULL>(a_val)){
                 return Type::DB_NULL_TYPE;
@@ -164,6 +161,10 @@ namespace DB{
             throw DatabaseException("DB::DBValueConverter::checkType", "TYPE ERROR", "Value Type not recognized");
         }
         static bool isNull(const DBValue& a_val) { return std::holds_alternative<DB_NULL>(a_val); }
+
+
     };
+
+
 
 }
