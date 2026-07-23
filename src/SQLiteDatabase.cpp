@@ -39,8 +39,8 @@ DB::SQLiteDatabase::SQLiteDatabase(SQLiteDatabase &&other) {
     other.db = nullptr;
 }
 
-int DB::SQLiteDatabase::execute(const std::string &query, const std::vector<DBValue> &params)
-{
+int DB::SQLiteDatabase::execute(const std::string &query, const std::vector<DBValue> &params) {
+    
     return 0;
 }
 
@@ -147,9 +147,7 @@ DB::QuerySet DB::SQLiteDatabase::select(const std::string &query, const std::vec
                 
             }
         }
-        for(int i = 0; i < row.values.size(); i++){
 
-        }
         resultSet.data.push_back(row);
         
     }
