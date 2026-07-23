@@ -39,13 +39,65 @@ DB::SQLiteDatabase::SQLiteDatabase(SQLiteDatabase &&other) {
     other.db = nullptr;
 }
 
-int DB::SQLiteDatabase::execute(const std::string &query, const std::vector<DBValue> &params) {
-    
-    return 0;
+void DB::SQLiteDatabase::execute(const std::string &query, const std::vector<DBValue> &params) {
+    sqlite3_stmt* stmt = nullptr;
+
+    int rc = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, NULL);
+
+    if(rc != SQLITE_OK){
+        sqlite3_finalize(stmt);
+        throw DatabaseException("SB::SQLiteDatabase::execute", "QUERY ERROR", sqlite3_errmsg(db));
+
+    }
+
+    for(int i = 0; i < params.size(); i++){
+        auto& val = params.at(i);
+
+        Type valType = DBValueConverter::checkType(val);
+        switch(valType){
+            case Type::DB_NULL_TYPE: {
+                sqlite3_bind_null(stmt, i + 1);
+                break;
+            }
+            case Type::DB_STRING_TYPE: {
+                DB_String convertedType = DBValueConverter::fromDBValue<DB_String>(val);
+                sqlite3_bind_text(stmt, i + 1, convertedType.c_str(), convertedType.size(), SQLITE_TRANSIENT);
+                break;
+            }
+            case Type::DB_INT_TYPE: {
+                DB_Int convertedType = DBValueConverter::fromDBValue<DB_Int>(val);
+                sqlite3_bind_int64(stmt, i + 1, convertedType);
+                break;
+            }
+            case Type::DB_FLOAT_TYPE: {
+                DB_Float convertedType = DBValueConverter::fromDBValue<DB_Float>(val);
+                sqlite3_bind_double(stmt, i + 1, convertedType);
+                break;
+            }
+            case Type::DB_BINARY_TYPE: {
+                DB_Binary convertedType = DBValueConverter::fromDBValue<DB_Binary>(val);
+                sqlite3_bind_blob(stmt, i + 1, static_cast<const void*>(convertedType.data()), convertedType.size(), SQLITE_TRANSIENT);
+                break;
+            }
+            default:{
+                throw DatabaseException("DB::SQLiteDatabase::select", "TYPE ERROR", "Could not deduce Parameter types.");
+            }
+        }
+
+    }
+
+    while((rc = sqlite3_step(stmt)) == SQLITE_ROW);
+
+    if(rc != SQLITE_DONE){
+        sqlite3_finalize(stmt);
+
+        throw DatabaseException("DB::SQLiteDatabase::execute", "QUERY ERROR", sqlite3_errmsg(db));
+    }
+
+    sqlite3_finalize(stmt);
 }
 
-DB::QuerySet DB::SQLiteDatabase::select(const std::string &query, const std::vector<DBValue> &params)
-{
+DB::QuerySet DB::SQLiteDatabase::select(const std::string &query, const std::vector<DBValue> &params) {
     QuerySet resultSet;
     sqlite3_stmt* stmt = nullptr;
 
@@ -54,7 +106,7 @@ DB::QuerySet DB::SQLiteDatabase::select(const std::string &query, const std::vec
     if(rc != SQLITE_OK){
         sqlite3_finalize(stmt);
 
-        throw DatabaseException("SB::SQLiteDatabase::select", "QUERY ERROR", sqlite3_errmsg(db));
+        throw DatabaseException("DB::SQLiteDatabase::select", "QUERY ERROR", sqlite3_errmsg(db));
     }
 
     const int columnCount = sqlite3_column_count(stmt);
@@ -91,6 +143,9 @@ DB::QuerySet DB::SQLiteDatabase::select(const std::string &query, const std::vec
                 DB_Binary convertedType = DBValueConverter::fromDBValue<DB_Binary>(val);
                 sqlite3_bind_blob(stmt, i + 1, static_cast<const void*>(convertedType.data()), convertedType.size(), SQLITE_TRANSIENT);
                 break;
+            }
+            default:{
+                throw DatabaseException("DB::SQLiteDatabase::select", "TYPE ERROR", "Could not deduce Parameter types.");
             }
         }
     }
@@ -142,7 +197,7 @@ DB::QuerySet DB::SQLiteDatabase::select(const std::string &query, const std::vec
                     break;
                 }
                 case SQLITE_NULL:{
-
+                    row.insert({resultSet.colNames[i], DB_NULL({})});
                 }
                 
             }

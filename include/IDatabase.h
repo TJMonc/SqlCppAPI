@@ -71,7 +71,7 @@ namespace DB{
             IDatabase(const IDatabase& other) = delete;
             IDatabase(IDatabase&& other) = delete;
 
-            virtual int execute(const std::string& a_query, const std::vector<DBValue>& params) = 0;
+            virtual void execute(const std::string& a_query, const std::vector<DBValue>& params) = 0;
             virtual QuerySet select(const std::string& a_query, const std::vector<DBValue>& params) = 0;
 
     };

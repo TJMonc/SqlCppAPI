@@ -15,7 +15,7 @@ namespace DB{
             SQLiteDatabase(const SQLiteDatabase& other);
             SQLiteDatabase(SQLiteDatabase&& other);
 
-            virtual int execute(const std::string& query, const std::vector<DBValue>& params);
+            virtual void execute(const std::string& query, const std::vector<DBValue>& params);
             virtual QuerySet select(const std::string& query, const std::vector<DBValue>& params);
 
     };
