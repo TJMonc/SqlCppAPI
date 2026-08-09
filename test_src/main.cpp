@@ -3,6 +3,7 @@
 using namespace DB;
 int main(int argc, char** argv){
     DB::IDatabase* db = new DB::SQLiteDatabase("test.db");
+    db->execute("INSERT INTO new VALUES(?, ?)", {"Flameo Hotman", 112});
 
     QuerySet select = db->select("SELECT * FROM new", {});
     auto lol = DB::DBValue("ddd");

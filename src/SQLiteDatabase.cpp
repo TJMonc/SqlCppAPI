@@ -2,8 +2,7 @@
 #include <string.h>
 #include <iostream>
 
-DB::SQLiteDatabase::~SQLiteDatabase()
-{
+DB::SQLiteDatabase::~SQLiteDatabase(){
     if(db != nullptr){
         sqlite3_close(db);
     }
