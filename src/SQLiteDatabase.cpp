@@ -79,6 +79,7 @@ void DB::SQLiteDatabase::execute(const std::string &query, const std::vector<DBV
                 break;
             }
             default:{
+                sqlite3_finalize(stmt);
                 throw DatabaseException("DB::SQLiteDatabase::select", "TYPE ERROR", "Could not deduce Parameter types.");
             }
         }

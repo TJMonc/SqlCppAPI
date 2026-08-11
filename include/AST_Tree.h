@@ -10,13 +10,11 @@ namespace DB{
         std::vector<DBValue> values;
 
         virtual ~Condition() = default;
-        virtual std::unique_ptr<Condition> resolve() = 0;
     };
 
     struct FieldNode : Condition{
         std::string fieldName;
         FieldNode(std::string a_fieldName);
-        std::unique_ptr<Condition> resolve();
 
     };
 
@@ -24,7 +22,6 @@ namespace DB{
         DBValue val;
 
         LiteralNode(DBValue a_val);
-        std::unique_ptr<Condition> resolve();
 
     };
 
@@ -33,16 +30,14 @@ namespace DB{
         std::unique_ptr<Condition> left;
         std::string op;
 
-        BinaryNode(Condition& a_left, Condition& a_right, std::string op);
-        std::unique_ptr<Condition> resolve();
+        DB::BinaryNode::BinaryNode(std::unique_ptr<Condition> a_left, std::unique_ptr<Condition> a_right, std::string a_op);
     };
 
     struct UnaryNode : Condition{
         std::unique_ptr<Condition> cond;
         std::string op;
 
-        UnaryNode(Condition& cond, std::string op);
-        std::unique_ptr<Condition> resolve();
+        UnaryNode(std::unique_ptr<Condition> cond, std::string op);
         
     };
 
@@ -54,12 +49,16 @@ namespace DB{
         bool isCondition;
 
         InNode(std::string fieldName, std::vector<DBValue> a_condVals);
-        InNode(std::string fieldName, Condition& inCondition);
+        InNode(std::string fieldName, std::unique_ptr<Condition> inCondition);
 
-        std::unique_ptr<Condition> resolve();
     };
 
     struct BetweenNode : Condition{
+        std::string fieldName;
+        DBValue range[2];
+
+        BetweenNode(std::string fieldName, DBValue range[2]);
+        BetweenNode(std::string fieldName, DBValue val1, DBValue val2);
 
     };
 
