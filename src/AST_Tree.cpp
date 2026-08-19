@@ -29,7 +29,7 @@ DB::BinaryNode::BinaryNode(std::unique_ptr<Condition> a_left, std::unique_ptr<Co
 }
 
 
-DB::InNode::InNode(std::string a_fieldName, std::vector<DBValue> a_condVals) : fieldName(a_fieldName), valBeginOffset(values.size()) {
+DB::InNode::InNode(std::string a_fieldName, const std::vector<DBValue>& a_condVals) : fieldName(a_fieldName), valBeginOffset(values.size()) {
     values.insert(values.end(), a_condVals.begin(), a_condVals.end());
 
     valEndOffset = values.size();
@@ -61,5 +61,94 @@ DB::UnaryNode::UnaryNode(std::unique_ptr<Condition> a_cond, std::string a_op)
     conditionType = UNARY_NODE;
 }
 
+DB::BetweenNode::BetweenNode(std::string a_fieldName, const std::array<DBValue, 2>& a_range) {
+    fieldName = std::move(a_fieldName);
+    range = a_range;
+}
 
+DB::BetweenNode::BetweenNode(std::string a_fieldName, const DBValue &a_val1, const DBValue &a_val2)
+{
+    fieldName = std::move(a_fieldName);
+    range = {a_val1, a_val2};
+}
 
+std::unique_ptr<Condition> DB::SpecialOperators::like(const FieldSchema& a_field, DBValue a_literal) {
+    return std::make_unique<BinaryNode>(std::make_unique<FieldNode>(a_field.fieldName), std::make_unique<LiteralNode>(a_literal), "LIKE");
+}
+
+std::unique_ptr<Condition> DB::SpecialOperators::ilike(const FieldSchema &a_field, DBValue a_literal)
+{
+    return std::make_unique<BinaryNode>(std::make_unique<FieldNode>(a_field.fieldName), std::make_unique<LiteralNode>(a_literal), "ILIKE");
+}
+
+std::unique_ptr<Condition> DB::SpecialOperators::in(const FieldSchema &field, std::vector<DBValue> literal) {
+    return std::make_unique<InNode>(field.fieldName, literal);
+}
+
+std::unique_ptr<Condition> DB::SpecialOperators::in(const FieldSchema &field, std::unique_ptr<Condition> cond)
+{
+    return std::make_unique<InNode>(field.fieldName, std::move(cond));
+}
+
+std::unique_ptr<Condition> DB::SpecialOperators::between(FieldSchema field, std::array<DBValue, 2> literal)
+{
+    return std::make_unique<BetweenNode>(field.fieldName, literal);
+}
+
+std::unique_ptr<Condition> DB::operator<(FieldSchema& field, DBValue val)
+{
+    return std::make_unique<BinaryNode>(std::make_unique<FieldNode>(field.fieldName), std::make_unique<LiteralNode>(val), "<");
+}
+
+std::unique_ptr<Condition> DB::operator>(FieldSchema& field, DBValue val){
+    return std::make_unique<BinaryNode>(std::make_unique<FieldNode>(field.fieldName), std::make_unique<LiteralNode>(val), ">");
+}
+
+std::unique_ptr<Condition> DB::operator<(DBValue val, FieldSchema& field)
+{
+    return operator>(field, val);
+}
+
+std::unique_ptr<Condition> DB::operator>(DBValue val, FieldSchema& field)
+{
+    return operator<(field, val);
+}
+
+std::unique_ptr<Condition> DB::operator<=(FieldSchema& field, DBValue val) {
+    return std::make_unique<BinaryNode>(std::make_unique<FieldNode>(field.fieldName), std::make_unique<LiteralNode>(val), "<=");
+}
+
+std::unique_ptr<Condition> DB::operator>=(FieldSchema& field, DBValue val)
+{
+    return std::make_unique<BinaryNode>(std::make_unique<FieldNode>(field.fieldName), std::make_unique<LiteralNode>(val), ">=");
+}
+
+std::unique_ptr<Condition> DB::operator<=(DBValue val, FieldSchema& field)
+{
+    return operator>=(field, val);
+}
+
+std::unique_ptr<Condition> DB::operator>=(DBValue val, FieldSchema& field)
+{
+    return operator<=(field, val);
+}
+
+std::unique_ptr<Condition> DB::operator==(FieldSchema& field, DBValue val)
+{
+    return std::make_unique<BinaryNode>(std::make_unique<FieldNode>(field.fieldName), std::make_unique<LiteralNode>(val), "=");
+}
+
+std::unique_ptr<Condition> DB::operator!=(FieldSchema& field, DBValue val)
+{
+    return std::make_unique<BinaryNode>(std::make_unique<FieldNode>(field.fieldName), std::make_unique<LiteralNode>(val), "!=");
+}
+
+std::unique_ptr<Condition> DB::operator&&(std::unique_ptr<Condition> left, std::unique_ptr<Condition> right)
+{
+    return std::make_unique<BinaryNode>(std::move(left), std::move(right), "AND");
+}
+
+std::unique_ptr<Condition> DB::operator||(std::unique_ptr<Condition> left, std::unique_ptr<Condition> right)
+{
+    return std::make_unique<BinaryNode>(std::move(left), std::move(right), "OR");
+}

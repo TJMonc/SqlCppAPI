@@ -7,7 +7,7 @@ make_directory(${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(COMPILE_OPTIONS -std=c++20 -O2 -Werror)
+set(COMPILE_OPTIONS -std=c++20 -O2 -Werror -Wno-free-nonheap-object)
 
 
 FetchContent_Declare(

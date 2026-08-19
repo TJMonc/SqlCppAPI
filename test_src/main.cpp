@@ -3,9 +3,12 @@
 using namespace DB;
 int main(int argc, char** argv){
     DB::IDatabase* db = new DB::SQLiteDatabase("test.db");
-    db->execute("INSERT INTO new VALUES(?, ?)", {"Flameo Hotman", 112});
+    db->execute("CREATE TABLE IF NOT EXISTS people (name TEXT, age INTEGER)", {});
+    db->execute("INSERT INTO people VALUES(?, ?)", {"Jordan Moncure", 20});
+    db->execute("INSERT INTO people VALUES(?, ?)", {"Terrance Moncure Sr", 76});
 
-    QuerySet select = db->select("SELECT * FROM new", {});
+
+    QuerySet select = db->select("SELECT * FROM people", {});
     auto lol = DB::DBValue("ddd");
     DB::DBValueConverter l;
 
