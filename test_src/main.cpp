@@ -1,5 +1,6 @@
 #include <iostream>
 #include <SQLiteDatabase.h>
+#include <SQLiteQueryBuilder.h>
 using namespace DB;
 int main(int argc, char** argv){
     DB::IDatabase* db = new DB::SQLiteDatabase("test.db");
@@ -12,7 +13,7 @@ int main(int argc, char** argv){
     auto lol = DB::DBValue("ddd");
     DB::DBValueConverter l;
 
-
+    SQLiteQueryBuilder ihi;
     for(size_t i = 0; i < select.data.size(); i++){
         auto& dat = select.data[i];
         for(size_t j = 0; j < dat.values.size(); j++){

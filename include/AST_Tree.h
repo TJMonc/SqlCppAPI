@@ -73,7 +73,7 @@ namespace DB{
         static std::unique_ptr<Condition> in(const FieldSchema& field, std::vector<DBValue> literal);
         static std::unique_ptr<Condition> in(const FieldSchema& field, std::unique_ptr<Condition> cond);
 
-        static std::unique_ptr<Condition> between(FieldSchema field, std::array<DBValue, 2> literal);
+        static std::unique_ptr<Condition> between(const FieldSchema& field, std::array<DBValue, 2> literal);
 
 
     };

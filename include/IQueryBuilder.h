@@ -8,31 +8,42 @@ namespace DB {
 
     class IQueryBuilder{
         protected:
-            enum QueryStates {START, SELECT, WHERE, IN, LIMIT, ORDER, JOIN, JOIN_ON};
             std::string query;
             std::vector<DBValue> aggregateParams;
-            QueryStates prevState = START;
+            
+            
 
         public:
             virtual ~IQueryBuilder() = default;
             IQueryBuilder() = default;
-            virtual IQueryBuilder& select(TableSchema fromTable, bool isDistinct = false, std::vector<FieldSchema> cols = {}) = 0;
-            virtual IQueryBuilder& select(std::string tableName, bool isDistinct = false, std::vector<std::string> colNames = {}) = 0;
+            virtual IQueryBuilder& select(const TableSchema& fromTable, bool isDistinct = false, std::vector<FieldSchema> cols = {}) = 0;
+            
+            virtual IQueryBuilder& orUnion() = 0;
+            virtual IQueryBuilder& andIntersection() = 0;
+            virtual IQueryBuilder& except() = 0;
+
             virtual IQueryBuilder& where(std::string cond) = 0;
             virtual IQueryBuilder& where(std::unique_ptr<Condition> cond) = 0;
-            virtual IQueryBuilder& limit(int num) = 0;
-            virtual IQueryBuilder& order(FieldSchema col, bool isDesc) = 0;
-            virtual IQueryBuilder& order(std::string colName, bool isDesc) = 0;
-            virtual IQueryBuilder& innerJoin(TableSchema initTable, std::unique_ptr<Condition> onCond) = 0;
-            virtual IQueryBuilder& rightJoin(TableSchema initTable, std::unique_ptr<Condition> onCond) = 0;
-            virtual IQueryBuilder& leftJoin(TableSchema initTable, std::unique_ptr<Condition> onCond) = 0;
-            virtual IQueryBuilder& fullJoin(TableSchema initTable, std::unique_ptr<Condition> onCond) = 0;
-            virtual IQueryBuilder& innerJoin(TableSchema initTable, std::string onCond) = 0;
-            virtual IQueryBuilder& rightJoin(TableSchema initTable, std::string onCond) = 0;
-            virtual IQueryBuilder& leftJoin(TableSchema initTable, std::string onCond) = 0;
-            virtual IQueryBuilder& fullJoin(TableSchema initTable, std::string onCond) = 0;
+            virtual IQueryBuilder& limit(int limit, int offset = 0) = 0;
 
-            virtual std::string interpretCondition(std::unique_ptr<Condition>) = 0;
+            virtual IQueryBuilder& order(const FieldSchema& col, bool isDesc) = 0;
+
+            virtual IQueryBuilder& innerJoin(const TableSchema& initTable, std::unique_ptr<Condition> onCond) = 0;
+            virtual IQueryBuilder& rightJoin(const TableSchema& initTable, std::unique_ptr<Condition> onCond) = 0;
+            virtual IQueryBuilder& leftJoin(const TableSchema& initTable, std::unique_ptr<Condition> onCond) = 0;
+            virtual IQueryBuilder& fullJoin(const TableSchema& initTable, std::unique_ptr<Condition> onCond) = 0;
+
+            virtual IQueryBuilder& innerJoin(const TableSchema& initTable, std::string onCond) = 0;
+            virtual IQueryBuilder& rightJoin(const TableSchema& initTable, std::string onCond) = 0;
+            virtual IQueryBuilder& leftJoin(const TableSchema& initTable, std::string onCond) = 0;
+            virtual IQueryBuilder& fullJoin(const TableSchema& initTable, std::string onCond) = 0;
+
+            virtual IQueryBuilder& insert(const TableSchema& table, std::vector<DBValue> vals, std::vector<FieldSchema> fieldName = {}) = 0;
+            virtual IQueryBuilder& insert(const TableSchema& table, std::vector<std::vector<DBValue>> vals, std::vector<FieldSchema> fieldNames = {}) = 0;
+
+            virtual IQueryBuilder& update(const TableSchema& table, const FieldSchema& setField, DBValue setValue) = 0;
+
+            virtual std::string interpretCondition(std::unique_ptr<Condition> cond) = 0;
 
 
     };

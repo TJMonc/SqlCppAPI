@@ -90,7 +90,7 @@ std::unique_ptr<Condition> DB::SpecialOperators::in(const FieldSchema &field, st
     return std::make_unique<InNode>(field.fieldName, std::move(cond));
 }
 
-std::unique_ptr<Condition> DB::SpecialOperators::between(FieldSchema field, std::array<DBValue, 2> literal)
+std::unique_ptr<Condition> DB::SpecialOperators::between(const FieldSchema& field, std::array<DBValue, 2> literal)
 {
     return std::make_unique<BetweenNode>(field.fieldName, literal);
 }
