@@ -4,24 +4,33 @@ using namespace DB;
 
 IQueryBuilder &DB::SQLiteQueryBuilder::select(const TableSchema& fromTable, bool isDistinct, std::vector<FieldSchema> cols)
 {
+    if(fromTable.fields.empty()){
+        throw DatabaseException("DB::SQLiteQueryBuilder::select()", "TABLE ERROR", "TableSchema has no columns");
+    }
     query += "SELECT ";
     if(isDistinct){
         query += "DISTINCT ";
     }
-    if(cols.size() == 0){
+    if(cols.empty()){
         
         for(const auto& fields : fromTable.fields){
-            query += std::format("{} AS {}_{}, ", fields.fieldName, fields.fieldName, fromTable.tableName);
+            query += std::format("{}.{} AS {}_{}", fields.tableName, fields.fieldName, fields.fieldName, fields.tableName);
+            if(&fields != &fromTable.fields.back()){
+                query += ", ";
+            }
         }
         query = query.substr(0, query.size() - 2) + " ";
     }
     else{
         for(const auto& fields : cols){
-            query += std::format("{} AS {}_{}, ", fields.fieldName, fields.fieldName, fromTable.tableName);
+            query += std::format("{}.{} AS {}_{}", fields.tableName, fields.fieldName, fields.fieldName, fields.tableName);
+            if(&fields != &cols.back()){
+                query += ", ";
+            }
         }
-        query = query.substr(0, query.size() - 2) + " ";
 
     }
+
     query += "FROM " + fromTable.tableName + " ";
 
     return *this;
@@ -34,7 +43,7 @@ IQueryBuilder &DB::SQLiteQueryBuilder::orUnion() {
 
 IQueryBuilder &DB::SQLiteQueryBuilder::andIntersection()
 {
-    query += "INTERSECTION ";
+    query += "INTERSECT ";
     return *this;
 }
 
@@ -46,7 +55,7 @@ IQueryBuilder &DB::SQLiteQueryBuilder::except()
 
 IQueryBuilder &DB::SQLiteQueryBuilder::where(std::string cond)
 {
-    query += "WHERE " + cond;
+    query += "WHERE " + cond + " ";
     return *this;
 
 }
@@ -59,7 +68,7 @@ IQueryBuilder &DB::SQLiteQueryBuilder::where(std::unique_ptr<Condition> cond) {
 
 IQueryBuilder &DB::SQLiteQueryBuilder::limit(int limit, int offset)
 {
-    query += std::format("LIMIT {} OFFSET {} ", offset, limit);
+    query += std::format("LIMIT {} OFFSET {} ", limit, offset);
     return *this;
 }
 
@@ -93,7 +102,7 @@ IQueryBuilder &DB::SQLiteQueryBuilder::leftJoin(const TableSchema &initTable, st
 
 IQueryBuilder &DB::SQLiteQueryBuilder::fullJoin(const TableSchema &initTable, std::unique_ptr<Condition> onCond)
 {
-    query += std::format("LEFT JOIN {} ON {} ", initTable.tableName, interpretCondition(std::move(onCond)));
+    query += std::format("FULL JOIN {} ON {} ", initTable.tableName, interpretCondition(std::move(onCond)));
 
     return *this;
 }
@@ -128,11 +137,17 @@ IQueryBuilder &DB::SQLiteQueryBuilder::fullJoin(const TableSchema &initTable, st
 
 IQueryBuilder &DB::SQLiteQueryBuilder::insert(const TableSchema &table, std::vector<DBValue> vals, std::vector<FieldSchema> fields)
 {
-    if(vals.size() == 0 || (vals.size() != table.fields.size() && fields.size() == 0) || (fields.size() != vals.size() && fields.size() != 0)){
+    if(table.fields.empty()){
         throw DatabaseException(
             "DB::SQLiteQueryBuilder::insert", 
             "INVALID ARGUMENTS",
-             "value vector size must either be equal to fields vector size or equal to the number of columns within the table");
+             "TableSchema has no columns");
+    }
+    if(vals.empty()){
+        throw DatabaseException(
+            "DB::SQLiteQueryBuilder::insert", 
+            "INVALID ARGUMENTS",
+             "Value vector is empty"); 
     }
 
     query += "INSERT INTO " + table.tableName + " ";
@@ -162,11 +177,17 @@ IQueryBuilder &DB::SQLiteQueryBuilder::insert(const TableSchema &table, std::vec
 }
 
 IQueryBuilder &DB::SQLiteQueryBuilder::insert(const TableSchema& table, std::vector<std::vector<DBValue>> vals, std::vector<FieldSchema> fields){
-    if(vals.size() == 0 || (vals.at(0).size() != table.fields.size() && fields.size() == 0) || (fields.size() != vals.at(0).size() && fields.size() != 0)){
+    if(table.fields.empty()){
         throw DatabaseException(
             "DB::SQLiteQueryBuilder::insert", 
             "INVALID ARGUMENTS",
-             "value vector size must either be equal to fields vector size or equal to the number of columns within the table");
+             "TableSchema has no columns");
+    }
+    if(vals.empty()){
+        throw DatabaseException(
+            "DB::SQLiteQueryBuilder::insert", 
+            "INVALID ARGUMENTS",
+             "Value vector is empty"); 
     }
 
     query += "INSERT INTO " + table.tableName + " ";
@@ -185,10 +206,10 @@ IQueryBuilder &DB::SQLiteQueryBuilder::insert(const TableSchema& table, std::vec
     for(size_t i = 0; i < vals.size(); i++){
         query += "(";
 
-        for (size_t i = 0; vals.at(i).size(); i++){
+        for (size_t j = 0; j < vals.at(i).size(); j++){
             query += "? ";
 
-            if (i < vals.size() - 1){
+            if (i < vals.at(i).size() - 1){
                 query += ", ";
             }
         }
@@ -196,10 +217,23 @@ IQueryBuilder &DB::SQLiteQueryBuilder::insert(const TableSchema& table, std::vec
         if (i < vals.size() - 1){
             query += ", ";
         }
+        aggregateParams.insert(aggregateParams.end(), vals.at(i).begin(), vals.at(i).end());
+
     }
     query += " ";
+    return *this;
+}
 
-    aggregateParams.insert(aggregateParams.end(), vals.begin(), vals.end());
+IQueryBuilder &DB::SQLiteQueryBuilder::insertSelect(const TableSchema &insertTable, std::vector<FieldSchema> fieldNames, const TableSchema &selectTable, bool isDistinct, std::vector<FieldSchema> cols){
+    if(insertTable.fields.empty() || selectTable.fields.empty()){
+        throw DatabaseException("DB::SQLiteQueryBuilder::insertSelect()", "INVALID ARGUMENTS", "TableSchema has no Columns");
+    }
+    query += "INSERT INTO " + insertTable.tableName + " ";
+    const std::vector<FieldSchema>* insertFields;
+    const std::vector<FieldSchema>* selectFields;
+    if(!fieldNames.empty()){
+        insertFields = &insertTable.fields;
+    }
 
     return *this;
 }
@@ -210,3 +244,6 @@ IQueryBuilder &DB::SQLiteQueryBuilder::update(const TableSchema &table, const Fi
     aggregateParams.emplace_back(setValue);
     return *this;
 }
+
+IQueryBuilder& DB::SQLiteQueryBuilder::makeTable(const TableSchema& tableSchema){return *this;};
+std::string DB::SQLiteQueryBuilder::interpretCondition(std::unique_ptr<Condition> cond){return "";};

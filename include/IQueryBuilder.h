@@ -1,5 +1,4 @@
 #pragma once
-#include "Schema.h"
 #include "AST_Tree.h"
 
 namespace DB {
@@ -41,7 +40,10 @@ namespace DB {
             virtual IQueryBuilder& insert(const TableSchema& table, std::vector<DBValue> vals, std::vector<FieldSchema> fieldName = {}) = 0;
             virtual IQueryBuilder& insert(const TableSchema& table, std::vector<std::vector<DBValue>> vals, std::vector<FieldSchema> fieldNames = {}) = 0;
 
+            virtual IQueryBuilder& insertSelect(const TableSchema& insertTable, std::vector<FieldSchema> fieldNames, const TableSchema& selectTableTable, bool isDistinct = false, std::vector<FieldSchema> cols = {}) = 0;
+
             virtual IQueryBuilder& update(const TableSchema& table, const FieldSchema& setField, DBValue setValue) = 0;
+            virtual IQueryBuilder& makeTable(const TableSchema& tableSchema) = 0;
 
             virtual std::string interpretCondition(std::unique_ptr<Condition> cond) = 0;
 

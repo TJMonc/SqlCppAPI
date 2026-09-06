@@ -14,7 +14,8 @@ namespace DB{
 
             virtual IQueryBuilder& where(std::string cond);
             virtual IQueryBuilder& where(std::unique_ptr<Condition> cond);
-            virtual IQueryBuilder& limit(int limit, int offset = 0);
+            virtual IQueryBuilder& limit(int limit, int offset);
+
             virtual IQueryBuilder& order(const FieldSchema& col, bool isDesc);
 
             virtual IQueryBuilder& innerJoin(const TableSchema& initTable, std::unique_ptr<Condition> onCond);
@@ -30,7 +31,10 @@ namespace DB{
             virtual IQueryBuilder& insert(const TableSchema& table, std::vector<DBValue> vals, std::vector<FieldSchema> fieldName = {});
             virtual IQueryBuilder& insert(const TableSchema& table, std::vector<std::vector<DBValue>> vals, std::vector<FieldSchema> fieldNames = {});
 
+            virtual IQueryBuilder& insertSelect(const TableSchema& insertTable, std::vector<FieldSchema> fieldNames, const TableSchema& selectTableTable, bool isDistinct = false, std::vector<FieldSchema> cols = {});
+
             virtual IQueryBuilder& update(const TableSchema& table, const FieldSchema& setField, DBValue setValue);
+            virtual IQueryBuilder& makeTable(const TableSchema& tableSchema);
 
             virtual std::string interpretCondition(std::unique_ptr<Condition> cond);
 
