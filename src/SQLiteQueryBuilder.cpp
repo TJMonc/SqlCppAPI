@@ -231,9 +231,32 @@ IQueryBuilder &DB::SQLiteQueryBuilder::insertSelect(const TableSchema &insertTab
     query += "INSERT INTO " + insertTable.tableName + " ";
     const std::vector<FieldSchema>* insertFields;
     const std::vector<FieldSchema>* selectFields;
-    if(!fieldNames.empty()){
-        insertFields = &insertTable.fields;
+    
+    insertFields = (fieldNames.empty()) ? &insertTable.fields : &fieldNames;
+    selectFields = (cols.empty()) ? &selectTable.fields : &cols;
+
+    if(insertFields->size() != selectFields->size()){
+        throw DatabaseException("DB::SQLiteQueryBuilder::insertSelect()", "INVALID ARGUMENTS", "INSERT fields and SELECT field sizes must be equal");
     }
+    query += "(";
+
+    for(size_t i = 0; i < insertFields->size(); i++){
+        query += insertFields->at(i).fieldName;
+        if(i < insertFields->size() - 1){
+            query += ", ";
+        }
+
+    }
+    query += ") SELECT ";
+
+    for(size_t i = 0; i < selectFields->size(); i++){
+        query += selectFields->at(i).fieldName;
+        if(i < selectFields->size() - 1){
+            query += ", ";
+        }
+
+    }
+
 
     return *this;
 }

@@ -113,6 +113,9 @@ namespace DB{
                         return std::to_string(std::get<DB_Float>(a_val));
                     }
                 }
+                else if(isNull(a_val)){
+                    return std::string("");
+                }
                 else{
                     throw DatabaseException("DB::DBValueConverter::fromDBValue<DB_String>", "TYPE CONVERSION ERROR", "Type Mismatch at runtime");
 
