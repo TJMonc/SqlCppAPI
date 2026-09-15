@@ -2,7 +2,45 @@
 #include <format>
 using namespace DB;
 
-IQueryBuilder &DB::SQLiteQueryBuilder::select(const TableSchema& fromTable, bool isDistinct, std::vector<FieldSchema> cols)
+const std::string DB::SQLiteQueryBuilder::getTypeString(const FieldSchema& field)
+{
+
+
+    switch(field.fieldType){
+        case Type::DB_NULL_TYPE:{
+            return "NULL";
+            break;
+        }
+        case Type::DB_INT_TYPE:{
+            return "INTEGER";
+            break;
+        }
+        case Type::DB_FLOAT_TYPE:{
+            return "REAL";
+            break;
+        }
+        case Type::DB_STRING_TYPE:{
+
+            if(field.fieldType == DB_STRING_TYPE && field.charLimit != 0){
+                return std::format("VARCHAR({})", field.charLimit);
+            }
+            else{
+                return "TEXT";
+            }
+
+            break;
+        }
+        case Type::DB_BINARY_TYPE:{
+            return "BLOB";
+            break;
+        }
+        default:{
+            throw DatabaseException("DB::SQLiteQueryBuilder::getTypeString()", "TYPE ERROR", "Field type not recognized from Schema");
+        }
+    }
+}
+
+IQueryBuilder &DB::SQLiteQueryBuilder::select(const TableSchema &fromTable, bool isDistinct, std::vector<FieldSchema> cols)
 {
     if(fromTable.fields.empty()){
         throw DatabaseException("DB::SQLiteQueryBuilder::select()", "TABLE ERROR", "TableSchema has no columns");
@@ -257,7 +295,6 @@ IQueryBuilder &DB::SQLiteQueryBuilder::insertSelect(const TableSchema &insertTab
 
     }
 
-
     return *this;
 }
 
@@ -268,5 +305,32 @@ IQueryBuilder &DB::SQLiteQueryBuilder::update(const TableSchema &table, const Fi
     return *this;
 }
 
-IQueryBuilder& DB::SQLiteQueryBuilder::makeTable(const TableSchema& tableSchema){return *this;};
+IQueryBuilder& DB::SQLiteQueryBuilder::makeTable(const TableSchema& tableSchema){
+    if(tableSchema.fields.empty()){
+        throw DatabaseException("DB::SQLiteQueryBuilder::makeTable()", "SCHEMA ERROR", "Table Schema must have at least one field");
+    }
+    query += "CREATE TABLE IF NOT EXISTS " + tableSchema.tableName + " (";
+
+    for(const auto& field : tableSchema.fields){
+        query += field.fieldName;
+
+        
+        if(field.isAutoIncrement){
+            query += " AUTOINCREMENT";
+        }
+        if(!field.isNullable){
+            query += " NOT NULL";
+        }
+        if(field.isPrimary)
+
+        if(&field != &tableSchema.fields.back()){
+            query += ", ";
+        }
+    }
+    query += ") ";
+
+    
+    return *this;
+
+};
 std::string DB::SQLiteQueryBuilder::interpretCondition(std::unique_ptr<Condition> cond){return "";};

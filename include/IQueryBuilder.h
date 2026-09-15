@@ -6,9 +6,13 @@ namespace DB {
 
 
     class IQueryBuilder{
+        private:
         protected:
             std::string query;
             std::vector<DBValue> aggregateParams;
+
+            virtual const std::string getTypeString(const FieldSchema& type) = 0;
+
             
             
 
@@ -44,6 +48,7 @@ namespace DB {
 
             virtual IQueryBuilder& update(const TableSchema& table, const FieldSchema& setField, DBValue setValue) = 0;
             virtual IQueryBuilder& makeTable(const TableSchema& tableSchema) = 0;
+            virtual IQueryBuilder& alterTable(const TableSchema& oldTableSchema, const TableSchema& newTableSchema) = 0;
 
             virtual std::string interpretCondition(std::unique_ptr<Condition> cond) = 0;
 

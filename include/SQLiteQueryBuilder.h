@@ -3,6 +3,9 @@
 
 namespace DB{
     class SQLiteQueryBuilder : public IQueryBuilder{
+        protected:
+            virtual const std::string getTypeString(const FieldSchema& type);
+
         public:
             SQLiteQueryBuilder() = default;
             
@@ -35,6 +38,7 @@ namespace DB{
 
             virtual IQueryBuilder& update(const TableSchema& table, const FieldSchema& setField, DBValue setValue);
             virtual IQueryBuilder& makeTable(const TableSchema& tableSchema);
+            virtual IQueryBuilder& alterTable(const TableSchema& oldTableSchema, const TableSchema& newTableSchema);
 
             virtual std::string interpretCondition(std::unique_ptr<Condition> cond);
 

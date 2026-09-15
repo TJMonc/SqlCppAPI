@@ -12,6 +12,7 @@ namespace DB{
         const bool isForeign = false;
         const bool isAutoIncrement = false;
         const bool isNullable = true;
+        const int charLimit = 0;
 
     };
 
