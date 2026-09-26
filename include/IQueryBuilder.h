@@ -7,7 +7,7 @@ namespace DB {
 
     class IQueryBuilder{
         private:
-        protected:
+        public:
             std::string query;
             std::vector<DBValue> aggregateParams;
 

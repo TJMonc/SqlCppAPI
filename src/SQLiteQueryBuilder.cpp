@@ -315,14 +315,14 @@ IQueryBuilder& DB::SQLiteQueryBuilder::makeTable(const TableSchema& tableSchema)
         query += std::format("{} {}", field.fieldName, this->getTypeString(field));
 
         
+        if(field.isPrimary){
+            query += " PRIMARY KEY";
+        }
         if(field.isAutoIncrement){
             query += " AUTOINCREMENT";
         }
         if(!field.isNullable){
             query += " NOT NULL";
-        }
-        if(field.isPrimary){
-            query += " PRIMARY KEY";
         }
         if(!std::holds_alternative<DB_NULL>(field.defaultValue)){
             if(field.fieldType == DB_STRING_TYPE){

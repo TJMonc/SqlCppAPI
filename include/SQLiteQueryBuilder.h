@@ -3,7 +3,7 @@
 
 namespace DB{
     class SQLiteQueryBuilder : public IQueryBuilder{
-        protected:
+        public:
             virtual const std::string getTypeString(const FieldSchema& type);
 
         public:
