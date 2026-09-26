@@ -37,9 +37,10 @@ DB::InNode::InNode(std::string a_fieldName, const std::vector<DBValue>& a_condVa
     conditionType = IN_NODE;
 }
 
-DB::InNode::InNode(std::string a_fieldName, std::unique_ptr<Condition> a_inCondition) {
+DB::InNode::InNode(std::string a_fieldName, std::unique_ptr<Condition> a_inCondition, FieldSchema a_conditionTarget) {
     fieldName = std::move(a_fieldName);
     inCondition = std::move(a_inCondition);
+    conditionTarget = a_conditionTarget;
 
     values.insert(values.end(), inCondition->values.begin(), inCondition->values.end());
     inCondition->values.clear();
@@ -62,14 +63,25 @@ DB::UnaryNode::UnaryNode(std::unique_ptr<Condition> a_cond, std::string a_op)
 }
 
 DB::BetweenNode::BetweenNode(std::string a_fieldName, const std::array<DBValue, 2>& a_range) {
+    conditionType = BETWEEN_NODE;
+
     fieldName = std::move(a_fieldName);
     range = a_range;
+
+    this->values.emplace_back(a_range.at(0));
+    this->values.emplace_back(a_range.at(1));
+
 }
 
 DB::BetweenNode::BetweenNode(std::string a_fieldName, const DBValue &a_val1, const DBValue &a_val2)
 {
+    conditionType = BETWEEN_NODE;
     fieldName = std::move(a_fieldName);
     range = {a_val1, a_val2};
+    this->values.emplace_back(range.at(0));
+    this->values.emplace_back(range.at(1));
+
+
 }
 
 std::unique_ptr<Condition> DB::SpecialOperators::like(const FieldSchema& a_field, DBValue a_literal) {
@@ -87,7 +99,12 @@ std::unique_ptr<Condition> DB::SpecialOperators::in(const FieldSchema &field, st
 
 std::unique_ptr<Condition> DB::SpecialOperators::in(const FieldSchema &field, std::unique_ptr<Condition> cond)
 {
-    return std::make_unique<InNode>(field.fieldName, std::move(cond));
+    return std::make_unique<InNode>(field.fieldName, std::move(cond), field);
+}
+
+std::unique_ptr<Condition> DB::SpecialOperators::in(const FieldSchema &field, std::unique_ptr<Condition> cond, const FieldSchema& conditionTarget)
+{
+    return std::make_unique<InNode>(field.fieldName, std::move(cond), conditionTarget);
 }
 
 std::unique_ptr<Condition> DB::SpecialOperators::between(const FieldSchema& field, std::array<DBValue, 2> literal)

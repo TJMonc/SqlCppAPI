@@ -99,7 +99,7 @@ IQueryBuilder &DB::SQLiteQueryBuilder::where(std::string cond)
 }
 
 IQueryBuilder &DB::SQLiteQueryBuilder::where(std::unique_ptr<Condition> cond) {
-    query += interpretCondition(std::move(cond)) + " ";
+    query += "WHERE " + interpretCondition(std::move(cond)) + " ";
 
     return *this;
 }
@@ -312,7 +312,7 @@ IQueryBuilder& DB::SQLiteQueryBuilder::makeTable(const TableSchema& tableSchema)
     query += "CREATE TABLE IF NOT EXISTS " + tableSchema.tableName + " (";
 
     for(const auto& field : tableSchema.fields){
-        query += field.fieldName;
+        query += std::format("{} {}", field.fieldName, this->getTypeString(field));
 
         
         if(field.isAutoIncrement){
@@ -321,8 +321,24 @@ IQueryBuilder& DB::SQLiteQueryBuilder::makeTable(const TableSchema& tableSchema)
         if(!field.isNullable){
             query += " NOT NULL";
         }
-        if(field.isPrimary)
-
+        if(field.isPrimary){
+            query += " PRIMARY KEY";
+        }
+        if(!std::holds_alternative<DB_NULL>(field.defaultValue)){
+            if(field.fieldType == DB_STRING_TYPE){
+                query += " DEFAULT \'" + DBValueConverter::fromDBValue<DB_String>(field.defaultValue) + "\'";
+            }
+            else{
+                query += " DEFAULT " + DBValueConverter::fromDBValue<DB_String>(field.defaultValue);
+    
+            }
+        }
+        if(field.isForeign){
+            query += " FOREIGN KEY";
+        }
+        if(field.isUnique){
+            query += " UNIQUE";
+        }
         if(&field != &tableSchema.fields.back()){
             query += ", ";
         }
@@ -332,5 +348,66 @@ IQueryBuilder& DB::SQLiteQueryBuilder::makeTable(const TableSchema& tableSchema)
     
     return *this;
 
+}
+IQueryBuilder &DB::SQLiteQueryBuilder::alterTable(const TableSchema &oldTableSchema, const TableSchema &newTableSchema) {
+    return *this;
+}
+IQueryBuilder &DB::SQLiteQueryBuilder::endStatement() {
+    query += ";\n";
+    return *this;
 };
-std::string DB::SQLiteQueryBuilder::interpretCondition(std::unique_ptr<Condition> cond){return "";};
+std::string DB::SQLiteQueryBuilder::interpretCondition(const std::unique_ptr<Condition>& cond){
+    const auto type = cond->conditionType;
+    std::string resultStr;
+    aggregateParams.insert(aggregateParams.end(), cond->values.begin(), cond->values.end());
+
+    switch(cond->conditionType){
+        case ConditionType::BINARY_NODE:{
+            BinaryNode* ptr = dynamic_cast<BinaryNode*>(cond.get());
+            resultStr = interpretCondition(ptr->left) + " " + ptr->op + " " + interpretCondition(ptr->right);
+
+            break;
+        }
+        case ConditionType::BETWEEN_NODE:{
+            BetweenNode* ptr = dynamic_cast<BetweenNode*>(cond.get());
+
+            resultStr = std::format("{} BETWEEN ? AND ?", ptr->fieldName);
+            break;
+        }
+        case ConditionType::IN_NODE:{
+            InNode* ptr = dynamic_cast<InNode*>(cond.get());
+
+            if(ptr->isCondition){
+                resultStr = std::format("{} IN (SELECT {} FROM {} WHERE {})",
+                     ptr->fieldName, ptr->conditionTarget.fieldName, ptr->conditionTarget.tableName, interpretCondition(ptr->inCondition));
+            }
+            else{
+                size_t valSize = ptr->valEndOffset - ptr->valBeginOffset;
+                resultStr = ptr->fieldName + " IN (";
+                for(size_t i = 0; i < valSize; ++i){
+                    resultStr += "?";
+                    if(i < valSize - 1){
+                        resultStr += ", ";
+                    }
+                }
+                resultStr += ")";
+            }
+
+            break;
+        }
+        case ConditionType::UNARY_NODE:{
+            UnaryNode* ptr = dynamic_cast<UnaryNode*>(cond.get());
+            resultStr = std::format("NOT {}", interpretCondition(ptr->cond));
+            break;
+        }
+        case LITERAL_NODE:{
+            resultStr = "?";
+            break;
+        }
+        case FIELD_NODE:{
+
+            resultStr = dynamic_cast<FieldNode*>(cond.get())->fieldName;
+        }
+    }
+    return resultStr;
+};

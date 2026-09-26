@@ -51,10 +51,11 @@ namespace DB{
         int valBeginOffset;
         int valEndOffset;
         std::unique_ptr<Condition> inCondition;
+        FieldSchema conditionTarget;
         bool isCondition;
 
         InNode(std::string fieldName, const std::vector<DBValue>& a_condVals);
-        InNode(std::string fieldName, std::unique_ptr<Condition> inCondition);
+        InNode(std::string fieldName, std::unique_ptr<Condition> inCondition, FieldSchema conditionTarget);
 
     };
 
@@ -72,6 +73,7 @@ namespace DB{
         static std::unique_ptr<Condition> ilike(const FieldSchema& field, DBValue literal);
         static std::unique_ptr<Condition> in(const FieldSchema& field, std::vector<DBValue> literal);
         static std::unique_ptr<Condition> in(const FieldSchema& field, std::unique_ptr<Condition> cond);
+        std::unique_ptr<Condition> in(const FieldSchema &field, std::unique_ptr<Condition> cond, const FieldSchema& conditionTarget);
 
         static std::unique_ptr<Condition> between(const FieldSchema& field, std::array<DBValue, 2> literal);
 

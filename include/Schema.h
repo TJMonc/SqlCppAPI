@@ -3,16 +3,21 @@
 
 namespace DB{
     struct FieldSchema{
-        const Type fieldType;
-        const std::string fieldName;
-        const std::string tableName;
-        const DBValue defaultValue = 0;
-        const bool isPrimary = false;
-        const bool isUnique = false;
-        const bool isForeign = false;
-        const bool isAutoIncrement = false;
-        const bool isNullable = true;
-        const int charLimit = 0;
+        Type fieldType;
+        std::string fieldName;
+        std::string tableName;
+        DBValue defaultValue = 0;
+        bool isPrimary = false;
+        bool isUnique = false;
+        bool isForeign = false;
+        bool isAutoIncrement = false;
+        bool isNullable = true;
+        int charLimit = 0;
+
+        operator std::string(){
+            return fieldName;
+        }
+
 
     };
 

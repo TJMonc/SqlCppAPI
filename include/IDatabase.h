@@ -18,6 +18,8 @@ namespace DB{
 
     enum Type {DB_INT_TYPE, DB_STRING_TYPE, DB_FLOAT_TYPE, DB_BINARY_TYPE, DB_NULL_TYPE};
 
+    //Representative of a Record within a Query Set. Meant to be used as a values map taking the form of [key=column, val=DBValue]
+
     struct Row{
         std::unordered_map<std::string, DBValue> values;
 
@@ -39,8 +41,11 @@ namespace DB{
 
     };
 
+/**
+ * Represents a Query Set returned from a select query.
+ */
     struct QuerySet{
-        std::vector<std::string> colNames;
+        std::vector<std::string> colNames; // vector of column names. Should
         std::vector<Type> colTypes;
         std::unordered_map<std::string, Type> typeMap;
 

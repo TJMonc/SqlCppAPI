@@ -49,8 +49,9 @@ namespace DB {
             virtual IQueryBuilder& update(const TableSchema& table, const FieldSchema& setField, DBValue setValue) = 0;
             virtual IQueryBuilder& makeTable(const TableSchema& tableSchema) = 0;
             virtual IQueryBuilder& alterTable(const TableSchema& oldTableSchema, const TableSchema& newTableSchema) = 0;
+            virtual IQueryBuilder& endStatement() = 0;
 
-            virtual std::string interpretCondition(std::unique_ptr<Condition> cond) = 0;
+            virtual std::string interpretCondition(const std::unique_ptr<Condition>& cond) = 0;
 
 
     };
