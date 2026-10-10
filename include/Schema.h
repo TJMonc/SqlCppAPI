@@ -14,9 +14,6 @@ namespace DB{
         bool isNullable = true;
         int charLimit = 0;
 
-        operator std::string(){
-            return fieldName;
-        }
 
 
     };
@@ -25,6 +22,9 @@ namespace DB{
         std::string tableName;
         FieldSchema primary;
         std::vector<FieldSchema> fields;
+
+        inline void registerField(const FieldSchema& f){ fields.emplace_back(f); };
+
     };
 
 }

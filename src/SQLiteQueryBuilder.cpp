@@ -1,5 +1,6 @@
 #include "SQLiteQueryBuilder.h"
 #include <format>
+#include <algorithm>
 using namespace DB;
 
 const std::string DB::SQLiteQueryBuilder::getTypeString(const FieldSchema& field)
@@ -294,7 +295,7 @@ IQueryBuilder &DB::SQLiteQueryBuilder::insertSelect(const TableSchema &insertTab
         }
 
     }
-
+    query += " FROM " + selectTable.tableName;
     return *this;
 }
 
@@ -349,17 +350,48 @@ IQueryBuilder& DB::SQLiteQueryBuilder::makeTable(const TableSchema& tableSchema)
     return *this;
 
 }
+
+//Need finish
 IQueryBuilder &DB::SQLiteQueryBuilder::alterTable(const TableSchema &oldTableSchema, const TableSchema &newTableSchema) {
+    query += "PRAGMA foreign_keys=OFF;\nBEGIN TRANSACTION;\n";
+
+    std::vector<FieldSchema> fieldVect;
+    fieldVect.reserve(std::min(oldTableSchema.fields.size(), newTableSchema.fields.size()));
+
+    std::unordered_map<std::string, const FieldSchema*> fieldMap;
+    
+    for(const auto& field : newTableSchema.fields){
+        fieldMap[field.fieldName] = &field;
+    }
+
+    for (const auto& field : oldTableSchema.fields) {
+        auto it = fieldMap.find(field.fieldName);
+        if (it != fieldMap.end()) {
+            fieldVect.push_back(*(it->second));
+        }
+    }
+
+    this->makeTable(newTableSchema).endStatement().insertSelect(newTableSchema, fieldVect, oldTableSchema, false, fieldVect).endStatement();
+    query += "DROP TABLE " + oldTableSchema.tableName;
+    query += "; ";
+
+    query += std::format("ALTER TABLE {} RENAME TO {};\n", newTableSchema.tableName, oldTableSchema.tableName);
+    query += "PRAGMA foreign_key_check;\nCOMMIT;\nPRAGMA foreign_keys = ON;\n";
+ 
     return *this;
 }
 IQueryBuilder &DB::SQLiteQueryBuilder::endStatement() {
-    query += ";\n";
+    if(!query.empty() && query.back() == ' '){
+        query.pop_back();
+        query += ";\n"; 
+   }
+
     return *this;
 };
 std::string DB::SQLiteQueryBuilder::interpretCondition(const std::unique_ptr<Condition>& cond){
-    const auto type = cond->conditionType;
     std::string resultStr;
     aggregateParams.insert(aggregateParams.end(), cond->values.begin(), cond->values.end());
+    
 
     switch(cond->conditionType){
         case ConditionType::BINARY_NODE:{
