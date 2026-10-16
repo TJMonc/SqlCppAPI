@@ -58,7 +58,7 @@ IQueryBuilder &DB::SQLiteQueryBuilder::select(const TableSchema &fromTable, bool
                 query += ", ";
             }
         }
-        query = query.substr(0, query.size() - 2) + " ";
+
     }
     else{
         for(const auto& fields : cols){
@@ -318,9 +318,9 @@ IQueryBuilder& DB::SQLiteQueryBuilder::makeTable(const TableSchema& tableSchema)
         
         if(field.isPrimary){
             query += " PRIMARY KEY";
-        }
-        if(field.isAutoIncrement){
-            query += " AUTOINCREMENT";
+            if(field.isAutoIncrement){
+                query += " AUTOINCREMENT";
+            }
         }
         if(!field.isNullable){
             query += " NOT NULL";
