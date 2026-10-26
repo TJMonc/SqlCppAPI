@@ -20,10 +20,24 @@ namespace DB{
 
     struct TableSchema{
         std::string tableName;
-        FieldSchema primary;
         std::vector<FieldSchema> fields;
+        int primarySize;
 
-        inline void registerField(const FieldSchema& f){ fields.emplace_back(f); };
+        TableSchema(std::string a_tableName, const std::vector<FieldSchema>& a_fields) : tableName(a_tableName), fields(a_fields){
+            for(size_t i = 0; i < a_fields.size(); i++){
+                if(a_fields.at(i).isPrimary){
+                    primarySize++;
+                }
+            }
+
+        }
+
+        inline void registerField(const FieldSchema& f){
+            if(f.isPrimary == true){
+                primarySize++;
+            }
+            fields.emplace_back(f);
+        };
 
     };
 

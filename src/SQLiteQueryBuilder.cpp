@@ -311,15 +311,20 @@ IQueryBuilder& DB::SQLiteQueryBuilder::makeTable(const TableSchema& tableSchema)
         throw DatabaseException("DB::SQLiteQueryBuilder::makeTable()", "SCHEMA ERROR", "Table Schema must have at least one field");
     }
     query += "CREATE TABLE IF NOT EXISTS " + tableSchema.tableName + " (";
+    std::vector<std::string> primaryKeys, foreignKeys;
 
     for(const auto& field : tableSchema.fields){
         query += std::format("{} {}", field.fieldName, this->getTypeString(field));
-
         
         if(field.isPrimary){
-            query += " PRIMARY KEY";
-            if(field.isAutoIncrement){
-                query += " AUTOINCREMENT";
+            if(tableSchema.primarySize > 1){
+                primaryKeys.emplace_back(field.fieldName);
+            }
+            else{
+                query += " PRIMARY KEY";
+                if(field.isAutoIncrement){
+                    query += " AUTOINCREMENT";
+                }
             }
         }
         if(!field.isNullable){
@@ -330,18 +335,28 @@ IQueryBuilder& DB::SQLiteQueryBuilder::makeTable(const TableSchema& tableSchema)
                 query += " DEFAULT \'" + DBValueConverter::fromDBValue<DB_String>(field.defaultValue) + "\'";
             }
             else{
-                query += " DEFAULT " + DBValueConverter::fromDBValue<DB_String>(field.defaultValue);
+                query += " DEFAULT \'" + DBValueConverter::fromDBValue<DB_String>(field.defaultValue) + "\'";
     
             }
-        }
-        if(field.isForeign){
-            query += " FOREIGN KEY";
         }
         if(field.isUnique){
             query += " UNIQUE";
         }
         if(&field != &tableSchema.fields.back()){
             query += ", ";
+        }
+
+    }
+    if (!primaryKeys.empty()){
+        query += ", PRIMARY KEY (";
+        for (const auto &key : primaryKeys){
+            query += key;
+            if(&key != &primaryKeys.back()){
+                query += ", ";
+            }
+            else{
+               query += ")";
+            }
         }
     }
     query += ") ";
